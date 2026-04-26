@@ -14,15 +14,25 @@ export function makeTrackOutput(baseOutput, volumeRef, analyzerId) {
     const originalGain = typeof v.gain === 'number' ? v.gain : 1;
     const originalAnalyze = v.analyze;
     v.gain = originalGain * volumeRef.current;
-    if (analyzerId && originalAnalyze == null) v.analyze = analyzerId;
+    // ALWAYS route this track's audio into its own per-track AnalyserNode.
+    // The previous "only set if not already set" guard meant any pattern
+    // that the LLM wrote with `.scope()` / `.pianoroll()` (which sticks
+    // analyze: 1 on every hap via Strudel's `.analyze` control) would
+    // register the audio under analysers[1] and starve our per-track
+    // painter — making the per-track viz lane look broken (just the idle
+    // dashed baseline). Overriding here is safe: our scoped painter
+    // takes priority, the global #test-canvas where .scope() would have
+    // drawn is hidden anyway, and the user's intended viz is the
+    // per-track painter selected via the dropdown.
+    if (analyzerId) v.analyze = analyzerId;
     try {
       return baseOutput(hap, deadline, hapDuration, cps, t);
     } finally {
       // Restore so the same hap object isn't permanently mutated if the
       // scheduler reuses it elsewhere.
       v.gain = originalGain;
-      if (analyzerId && originalAnalyze == null) delete v.analyze;
-      else if (originalAnalyze !== undefined) v.analyze = originalAnalyze;
+      if (originalAnalyze === undefined) delete v.analyze;
+      else v.analyze = originalAnalyze;
     }
   };
 }
