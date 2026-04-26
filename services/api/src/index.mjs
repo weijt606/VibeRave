@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.mjs';
 import { createOpenAICompatibleClient } from './infrastructure/openai-compatible-client.mjs';
 import { createOpenAICompatibleStt } from './infrastructure/openai-compatible-stt.mjs';
+import { createDashScopeStt } from './infrastructure/dashscope-stt.mjs';
 import { createWhisperTranscriber } from './infrastructure/whisper-transcriber.mjs';
 import { createVoskTranscriber } from './infrastructure/vosk-transcriber.mjs';
 import { createFileSessionStore } from './infrastructure/file-session-store.mjs';
@@ -100,6 +101,19 @@ function buildTranscriber(sttCfg) {
     }
     return t;
   }
+  if (sttCfg.provider === 'dashscope') {
+    const t = createDashScopeStt({
+      apiKey: sttCfg.apiKey,
+      baseURL: sttCfg.apiBaseURL,
+      model: sttCfg.apiModel,
+      language: sttCfg.language,
+    });
+    if (!t) {
+      console.warn('[stt] STT_PROVIDER=dashscope but STT_API_KEY is missing — falling back to whisper');
+      return createWhisperTranscriber(sttCfg);
+    }
+    return t;
+  }
   return createWhisperTranscriber(sttCfg);
 }
 const defaultTranscriber = buildTranscriber(config.stt);
@@ -171,6 +185,20 @@ function transcriberFor(overrides) {
     let t = transcriberCache.get(key);
     if (!t) {
       t = createOpenAICompatibleStt({ apiKey, baseURL, model, language: config.stt.language });
+      if (!t) return defaultTranscriber;
+      transcriberCache.set(key, t);
+    }
+    return t;
+  }
+  if (provider === 'dashscope') {
+    const apiKey = overrides.apiKey ?? null;
+    const baseURL = overrides.baseURL || 'https://dashscope-intl.aliyuncs.com';
+    const model = overrides.model || 'paraformer-v2';
+    if (!apiKey) return defaultTranscriber;
+    const key = `dashscope|${baseURL}|${model}|${apiKey.slice(-6)}`;
+    let t = transcriberCache.get(key);
+    if (!t) {
+      t = createDashScopeStt({ apiKey, baseURL, model, language: config.stt.language });
       if (!t) return defaultTranscriber;
       transcriberCache.set(key, t);
     }

@@ -185,7 +185,9 @@ export function ApiSettingsTab() {
           {STT_PRESETS.map((p) => {
             const active =
               p.provider === settings.sttProvider &&
-              (p.provider !== 'api' || settings.sttBaseUrl === p.baseUrl);
+              (p.provider === 'whisper' ||
+                p.provider === 'vosk' ||
+                settings.sttBaseUrl === p.baseUrl);
             return (
               <Pill key={p.id} active={active} onClick={() => applySttPreset(p)}>
                 {p.label}
@@ -194,7 +196,7 @@ export function ApiSettingsTab() {
           })}
         </div>
 
-        {settings.sttProvider === 'api' && (
+        {(settings.sttProvider === 'api' || settings.sttProvider === 'dashscope') && (
           <>
             <Field label="API key" hint="Stored locally in your browser.">
               <TextInput
@@ -208,14 +210,20 @@ export function ApiSettingsTab() {
               <TextInput
                 value={settings.sttBaseUrl}
                 onChange={setSttBaseUrl}
-                placeholder="https://api.openai.com/v1"
+                placeholder={
+                  settings.sttProvider === 'dashscope'
+                    ? 'https://dashscope-intl.aliyuncs.com'
+                    : 'https://api.openai.com/v1'
+                }
               />
             </Field>
             <Field label="Model">
               <TextInput
                 value={settings.sttModel}
                 onChange={setSttModel}
-                placeholder="whisper-1"
+                placeholder={
+                  settings.sttProvider === 'dashscope' ? 'paraformer-v2' : 'whisper-1'
+                }
               />
             </Field>
           </>
@@ -240,11 +248,19 @@ export function ApiSettingsTab() {
         {settings.sttProvider === 'api' && (
           <p className="text-xs opacity-50 leading-snug border-l-2 border-muted pl-2">
             Any endpoint that implements OpenAI&apos;s <code className="font-mono">/audio/transcriptions</code> shape
-            works out of the box (OpenAI Whisper, Groq Whisper, Qwen DashScope, self-hosted
-            whisper.cpp servers, etc.). For engines with a different protocol — e.g.
-            websocket-streaming ASR like Qwen&apos;s <code className="font-mono">fun-asr-realtime</code> — you&apos;ll
-            need to add an adapter at <code className="font-mono">services/api/src/infrastructure/</code> and
-            wire it into <code className="font-mono">index.mjs#buildTranscriber</code>.
+            works out of the box (OpenAI Whisper, Groq Whisper, self-hosted
+            whisper.cpp servers, etc.). For DashScope ASR (paraformer / fun-asr) use the
+            <em> Qwen (DashScope native)</em> preset instead — DashScope&apos;s OpenAI-compat shim
+            doesn&apos;t carry audio.
+          </p>
+        )}
+
+        {settings.sttProvider === 'dashscope' && (
+          <p className="text-xs opacity-50 leading-snug border-l-2 border-muted pl-2">
+            Native DashScope ASR adapter — targets the multimodal-generation endpoint
+            (not the OpenAI-compat shim). Verified models: <code className="font-mono">paraformer-v2</code>,
+            <code className="font-mono"> qwen-audio-asr</code>, <code className="font-mono">fun-asr</code> (synchronous; for the
+            streaming <code className="font-mono">fun-asr-realtime</code> variant you&apos;d need a websocket adapter).
           </p>
         )}
       </Section>

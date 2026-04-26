@@ -188,13 +188,15 @@ export const STT_PRESETS = [
     needsKey: true,
   },
   {
-    id: 'qwen-asr',
-    label: 'Qwen (DashScope)',
-    provider: 'api',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    // DashScope's OpenAI-compatible mode exposes paraformer / fun-asr
-    // family models via /audio/transcriptions. Override the model field
-    // for fun-asr-realtime, paraformer-v2, etc.
+    // DashScope's OpenAI-compatible mode does NOT carry /audio/transcriptions
+    // — only chat. For paraformer / fun-asr we use a native DashScope adapter
+    // (services/api/src/infrastructure/dashscope-stt.mjs) that targets the
+    // multimodal-generation endpoint. Pick this preset, paste your DashScope
+    // key, and the model name (paraformer-v2 / qwen-audio-asr / fun-asr).
+    id: 'qwen-dashscope',
+    label: 'Qwen (DashScope native)',
+    provider: 'dashscope',
+    baseUrl: 'https://dashscope-intl.aliyuncs.com',
     model: 'paraformer-v2',
     keyHelp: 'https://bailian.console.aliyun.com/?apiKey=1',
     needsKey: true,
