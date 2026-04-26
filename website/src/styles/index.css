@@ -158,14 +158,14 @@
 /* Strudel's @strudel/draw library lazily creates a fullscreen canvas
    (#test-canvas) on document.body — position:fixed, 100vw × 100vh — and
    uses it as the default ctx for .pianoroll() / .draw() / .animate().
-   Any time the LLM emits a pattern that calls those (or a legacy
-   drawings.mjs example does), the visualization paints on top of the
-   entire viewport, including the right Vibe panel.
+   Any LLM-generated pattern that calls those needs it visible to show
+   visuals, but it also can't overlay the right-side Vibe / API panel.
 
-   Our app uses per-track visualizers (TrackVisualizer.jsx) with their
-   own scoped canvases, so the global overlay is dead weight. Hiding it
-   here keeps the per-track viz untouched while stopping the
-   bleed-through into the right panel. */
+   Pinning it to z-index: 0 puts it BEHIND every panel (panels use the
+   default stacking context plus explicit bg colors, so they stack on
+   top). The viz shows through the editor / track-list areas where
+   nothing opaque is layered on top, and is cleanly hidden by the
+   right-side panels. */
 canvas#test-canvas {
-  display: none !important;
+  z-index: 0 !important;
 }

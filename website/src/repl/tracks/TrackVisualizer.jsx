@@ -52,7 +52,11 @@ export function TrackVisualizer({ trackId, onCanvas, viz, onVizChange }) {
       </div>
       <canvas
         ref={ref}
-        className="block rounded mx-auto"
+        // Faint bg + subtle ring so the canvas footprint is visible even
+        // when audio is silent / paused — without this it disappears
+        // entirely and the user can't tell the viz lane is even there.
+        // Painters draw on top, so live content fully covers this.
+        className="block rounded mx-auto bg-foreground/5 ring-1 ring-muted/30"
         style={canvasStyle}
       />
     </div>
