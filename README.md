@@ -1,7 +1,7 @@
 <h1 align="center">VibeRave</h1>
 
 <p align="center">
-  <img src="src-tauri/images/viberave-banner.png" alt="VibeRave — voice → music engine" width="100%" />
+  <img src="docs/images/viberave-banner.png" alt="VibeRave — voice → music engine" width="100%" />
 </p>
 
 <p align="center">
@@ -72,7 +72,7 @@ accurate) implementations — you can run the whole stack with no paid services.
 <br/>
 
 <p align="center">
-  <img src="src-tauri/images/viberave-interface.png" alt="VibeRave — live UI" width="100%" />
+  <img src="docs/images/viberave-interface.png" alt="VibeRave — live UI" width="100%" />
 </p>
 
 <br/>
@@ -254,4 +254,31 @@ the server automatically; the web side is Astro's standard HMR.
 
 ## License
 
-[AGPL-3.0-or-later](LICENSE) — inherited from upstream Strudel.
+VibeRave is licensed under [**AGPL-3.0-or-later**](LICENSE), inherited from
+upstream [Strudel](https://github.com/tidalcycles/strudel) (which is also
+AGPL-3.0). Because Strudel is the strongest copyleft license in the
+dependency graph, the combined work has to ship under AGPL-3.0.
+
+### Dependency licenses
+
+| Component | License | Compatible |
+|---|---|---|
+| **Strudel** (in `packages/`) | AGPL-3.0-or-later | inherited |
+| **openai** (Node SDK for OpenAI-compatible APIs) | Apache-2.0 | ✓ |
+| **smart-whisper** (whisper.cpp binding) | MIT | ✓ |
+| **vosk-koffi** (VOSK FFI binding) | MIT | ✓ |
+| **wavefile** | MIT | ✓ |
+| **fastify** | MIT | ✓ |
+
+All runtime dependencies are MIT/Apache-2.0 (permissive, compatible with
+AGPL). External services we *connect to over the network* (OpenAI, Groq,
+DashScope, your Ollama instance, etc.) are governed by their own terms —
+not bundled, not redistributed, not affected by VibeRave's license.
+
+### What AGPL-3.0 means in practice
+
+Because of the AGPL "network use is distribution" clause, **if you run a
+modified version of VibeRave as a public network service, you must make
+your modified source available to the users of that service**. Forks for
+private use don't have to publish — only public deployments. See the
+[full license text](LICENSE).

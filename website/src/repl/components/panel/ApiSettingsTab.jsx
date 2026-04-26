@@ -75,9 +75,61 @@ function Pill({ active, onClick, children, title }) {
   );
 }
 
+// Build the override headers from current settings — same shape vibeApi
+// uses on every /generate and /transcribe call. Reused here so the test
+// buttons exercise the EXACT same configuration the live calls do.
+function llmHeaders(s) {
+  const h = {};
+  if (s.llmProvider) h['x-llm-provider'] = s.llmProvider;
+  if (s.llmApiKey) h['x-llm-api-key'] = s.llmApiKey;
+  if (s.llmBaseUrl) h['x-llm-base-url'] = s.llmBaseUrl;
+  if (s.llmModel) h['x-llm-model'] = s.llmModel;
+  if (typeof s.llmTemperature === 'number')
+    h['x-llm-temperature'] = String(s.llmTemperature);
+  return h;
+}
+function sttHeaders(s) {
+  const h = {};
+  if (s.sttProvider) h['x-stt-provider'] = s.sttProvider;
+  if (s.sttApiKey) h['x-stt-api-key'] = s.sttApiKey;
+  if (s.sttBaseUrl) h['x-stt-base-url'] = s.sttBaseUrl;
+  if (s.sttModel) h['x-stt-model'] = s.sttModel;
+  return h;
+}
+
+function TestButton({ label, status, onClick }) {
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={status?.kind === 'pending'}
+        className="px-3 py-1 rounded border border-foreground text-foreground text-xs hover:opacity-80 disabled:opacity-50"
+      >
+        {status?.kind === 'pending' ? `Testing ${label}…` : `Test ${label}`}
+      </button>
+      {status?.kind === 'ok' && (
+        <span className="text-xs text-foreground" title={status.detail || ''}>
+          ✓ {status.ms} ms{status.model ? ` · ${status.model}` : ''}
+        </span>
+      )}
+      {status?.kind === 'error' && (
+        <span
+          className="text-xs text-red-400 break-all max-w-prose"
+          title={status.error}
+        >
+          ✗ {status.ms ? `${status.ms} ms · ` : ''}
+          {status.error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function ApiSettingsTab() {
   const settings = useSettings();
-  const [testStatus, setTestStatus] = useState(null); // null | 'pending' | 'ok' | string error
+  const [llmTest, setLlmTest] = useState(null);
+  const [sttTest, setSttTest] = useState(null);
 
   function applyLlmPreset(preset) {
     setLlmProvider(preset.provider);
@@ -90,16 +142,34 @@ export function ApiSettingsTab() {
     setSttModel(preset.model || '');
   }
 
-  async function testConnection() {
-    setTestStatus('pending');
+  // Run a backend health-test endpoint with the current override headers
+  // and update the matching test-status state. Each test pushes a tiny
+  // round-trip through the full provider stack so success means the
+  // user's keys + URL + model name actually work for live calls.
+  async function runTest(kind) {
+    const setStatus = kind === 'llm' ? setLlmTest : setSttTest;
+    const path = kind === 'llm' ? '/health/test-llm' : '/health/test-stt';
+    const headers = kind === 'llm' ? llmHeaders(settings) : sttHeaders(settings);
+    setStatus({ kind: 'pending' });
     try {
-      const res = await fetch(`${API_URL}/health`, { method: 'GET' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = await res.json();
-      setTestStatus(j.ok ? 'ok' : 'unhealthy');
-      setTimeout(() => setTestStatus(null), 3500);
+      const res = await fetch(`${API_URL}${path}`, { method: 'GET', headers });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setStatus({
+          kind: 'error',
+          ms: data?.ms,
+          error: data?.error || `HTTP ${res.status}`,
+        });
+        return;
+      }
+      setStatus({
+        kind: 'ok',
+        ms: data.ms,
+        model: data.model,
+        detail: data.sample ? `sample: "${data.sample}"` : undefined,
+      });
     } catch (err) {
-      setTestStatus(`Could not reach ${API_URL}: ${err.message}`);
+      setStatus({ kind: 'error', error: `Could not reach API (${err.message})` });
     }
   }
 
@@ -175,6 +245,8 @@ export function ApiSettingsTab() {
             className="w-full"
           />
         </Field>
+
+        <TestButton label="LLM" status={llmTest} onClick={() => runTest('llm')} />
       </Section>
 
       <Section
@@ -263,22 +335,9 @@ export function ApiSettingsTab() {
             streaming <code className="font-mono">fun-asr-realtime</code> variant you&apos;d need a websocket adapter).
           </p>
         )}
-      </Section>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={testConnection}
-          className="px-3 py-1 rounded border border-foreground text-foreground text-sm hover:opacity-80"
-        >
-          Test backend
-        </button>
-        {testStatus === 'pending' && <span className="text-xs opacity-70">Pinging…</span>}
-        {testStatus === 'ok' && <span className="text-xs text-foreground">✓ Backend reachable</span>}
-        {testStatus && testStatus !== 'pending' && testStatus !== 'ok' && (
-          <span className="text-xs text-red-400 break-all">{testStatus}</span>
-        )}
-      </div>
+        <TestButton label="STT" status={sttTest} onClick={() => runTest('stt')} />
+      </Section>
 
       <p className="text-xs opacity-50 leading-relaxed pt-2">
         These settings travel with each request as <code className="font-mono">x-llm-*</code> /
