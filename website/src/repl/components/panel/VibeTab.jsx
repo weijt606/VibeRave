@@ -240,6 +240,12 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
   // Re-render trigger for the auto-send "2s remaining" hint — refs alone
   // aren't reactive so we bump this when the timer is set/cleared.
   const [autoSendArmed, setAutoSendArmed] = useState(false);
+  // Pending command queue. While `loading` is true (a /generate is in
+  // flight), additional submissions are pushed here instead of being
+  // dropped. Each entry is { id, text }; the user can drag the X to
+  // remove an item before its turn. When the in-flight call finishes,
+  // the first entry is dequeued and run.
+  const [pendingQueue, setPendingQueue] = useState([]);
 
   const recorderRef = useRef(null);
   const pttActiveRef = useRef(false);
@@ -333,7 +339,17 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
 
   async function send(textOverride) {
     const text = (textOverride ?? prompt).trim();
-    if (!text || loading) return;
+    if (!text) return;
+    // Already generating — queue the new prompt instead of dropping it.
+    // The user can dismiss queued items via the X button while they wait.
+    if (loading) {
+      setPendingQueue((prev) => [
+        ...prev,
+        { id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, text },
+      ]);
+      setPrompt('');
+      return;
+    }
     setError('');
     setLoading(true);
     const currentCode = (typeof window !== 'undefined' && window.strudelMirror?.code) || '';
@@ -378,9 +394,25 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
     }
   }
 
+  function dropFromQueue(id) {
+    setPendingQueue((prev) => prev.filter((q) => q.id !== id));
+  }
+
   function cancelSend() {
     abortRef.current?.abort();
   }
+
+  // Drain the queue whenever a request finishes and there's something
+  // pending. We dequeue the head item and re-enter send() with it as
+  // the textOverride; send() will set loading=true again and re-trigger
+  // this effect when it finishes, walking the queue one item at a time.
+  useEffect(() => {
+    if (loading) return;
+    if (pendingQueue.length === 0) return;
+    const [head, ...rest] = pendingQueue;
+    setPendingQueue(rest);
+    sendRef.current?.(head.text);
+  }, [loading, pendingQueue]);
 
   sendRef.current = send;
 
@@ -602,6 +634,31 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
             )}
           </div>
         )}
+        {pendingQueue.length > 0 && (
+          <div
+            className="flex flex-wrap items-center gap-1.5"
+            title="Queued commands — they fire one at a time after the current generation finishes. Click × to drop one."
+          >
+            <span className="text-[10px] opacity-60 uppercase tracking-wide">queued</span>
+            {pendingQueue.map((q, i) => (
+              <span
+                key={q.id}
+                className="text-xs px-2 py-0.5 rounded-full border border-muted bg-background/60 text-foreground/90 inline-flex items-center gap-1.5"
+              >
+                <span className="opacity-50 tabular-nums">{i + 1}.</span>
+                <span className="max-w-[180px] truncate">{q.text}</span>
+                <button
+                  type="button"
+                  onClick={() => dropFromQueue(q.id)}
+                  className="opacity-50 hover:opacity-100 hover:text-red-400 leading-none"
+                  title="Drop from queue"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <div
           className="flex flex-wrap gap-1 mb-1.5"
           title="Click a chip to fill the prompt — useful when STT is unreliable. You can still edit before sending."
@@ -722,13 +779,24 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
             </select>
           </div>
           {loading ? (
-            <button
-              onClick={cancelSend}
-              title="Cancel in-flight request and edit the prompt"
-              className="px-3 py-1 rounded-md border border-foreground text-foreground text-sm hover:opacity-80"
-            >
-              ✕ Cancel
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={cancelSend}
+                title="Cancel the in-flight request"
+                className="px-3 py-1 rounded-md border border-foreground text-foreground text-sm hover:opacity-80"
+              >
+                ✕ Cancel
+              </button>
+              {prompt.trim() && (
+                <button
+                  onClick={() => send()}
+                  title="Queue this prompt to fire after the current one"
+                  className="px-3 py-1 rounded-md border border-muted text-foreground/80 text-sm hover:border-foreground hover:text-foreground"
+                >
+                  + Queue
+                </button>
+              )}
+            </div>
           ) : (
             <button
               onClick={() => send()}
