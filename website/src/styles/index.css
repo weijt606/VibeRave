@@ -1,0 +1,171 @@
+@font-face {
+  font-family: 'PressStart';
+  src: url('/fonts/PressStart2P/PressStart2P-Regular.ttf');
+  size-adjust: 65%;
+}
+@font-face {
+  font-family: 'BigBlueTerminal';
+  src: url('/fonts/BigBlueTerminal/BigBlue_TerminalPlus.TTF');
+}
+@font-face {
+  font-family: 'x3270';
+  src: url('/fonts/3270/3270-Regular.ttf');
+}
+@font-face {
+  font-family: 'galactico';
+  src: url('/fonts/galactico/Galactico-Basic.otf');
+}
+@font-face {
+  font-family: 'CutiePi';
+  src: url('/fonts/CutiePi/Cute_Aurora_demo.ttf');
+  size-adjust: 120%;
+}
+@font-face {
+  font-family: 'JetBrains';
+  src: url('/fonts/JetBrains/JetBrainsMono.woff2');
+}
+@font-face {
+  font-family: 'Monocraft';
+  src: url('/fonts/Monocraft/Monocraft.ttf');
+  size-adjust: 90%;
+}
+@font-face {
+  font-family: 'Hack';
+  src: url('/fonts/Hack/Hack-Regular.ttf');
+}
+@font-face {
+  font-family: 'we-come-in-peace';
+  src: url('/fonts/we-come-in-peace/we-come-in-peace-bb.regular.ttf');
+}
+@font-face {
+  font-family: 'FiraCode';
+  src: url('/fonts/FiraCode/FiraCode-Regular.ttf');
+}
+@font-face {
+  font-family: 'FiraCode-SemiBold';
+  src: url('/fonts/FiraCode/FiraCode-SemiBold.ttf');
+}
+@font-face {
+  font-family: 'teletext';
+  src: url('/fonts/teletext/EuropeanTeletext.ttf');
+  size-adjust: 90%;
+}
+@font-face {
+  font-family: 'tic80';
+  src: url('/fonts/tic80/tic-80-wide-font.otf');
+  size-adjust: 60%;
+}
+@font-face {
+  font-family: 'mode7';
+  src: url('/fonts/mode7/MODE7GX3.TTF');
+  size-adjust: 82%;
+}
+
+.prose > h1:not(:first-child) {
+  margin-top: 30px;
+}
+:root {
+  --app-height: 100vh;
+  --app-width: 100vw;
+}
+
+#console-tab {
+  font-family: BigBlueTerminal, monospace;
+}
+
+/* === Vibe Rave logo — hardcore techno styling === */
+/* Used by Panel.jsx header. Kept here so the keyframes / shadow stack
+   are easy to tune without going through React. */
+.vr-logo {
+  font-family: mode7, PressStart, JetBrains, monospace;
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  color: #ffffff;
+  position: relative;
+  display: inline-block;
+  padding: 0 0.15em;
+  text-shadow:
+    /* chromatic aberration: text duplicated with hot pink to the left, cyan to the right */
+    -2px 0 0 #ec4899,
+     2px 0 0 #22d3ee,
+    /* tight magenta neon core */
+     0 0 4px rgba(236, 72, 153, 1),
+     0 0 10px rgba(236, 72, 153, 0.85),
+    /* wider cyan halo */
+     0 0 22px rgba(34, 211, 238, 0.55),
+    /* hard industrial drop */
+     0 2px 0 rgba(0, 0, 0, 0.85);
+  animation: vr-flicker 5s steps(1, end) infinite;
+}
+/* Hazard-tape underline scan-line that sits under the logo */
+.vr-logo::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #ec4899 15%,
+    #22d3ee 50%,
+    #ec4899 85%,
+    transparent 100%
+  );
+  opacity: 0.7;
+  box-shadow: 0 0 6px rgba(236, 72, 153, 0.7);
+}
+/* Power-failure flicker — most of the time stable, brief drop-out
+   moments to evoke a malfunctioning club LED sign. */
+@keyframes vr-flicker {
+   0%,  3%, 100% {
+    opacity: 1;
+    text-shadow:
+      -2px 0 0 #ec4899,  2px 0 0 #22d3ee,
+       0 0 4px rgba(236, 72, 153, 1),
+       0 0 10px rgba(236, 72, 153, 0.85),
+       0 0 22px rgba(34, 211, 238, 0.55),
+       0 2px 0 rgba(0, 0, 0, 0.85);
+  }
+   3.2%, 3.6% {
+    opacity: 0.4;
+    text-shadow:
+      -3px 0 0 #ec4899,  3px 0 0 #22d3ee,
+       0 0 2px rgba(236, 72, 153, 0.5);
+  }
+  17%, 17.8% {
+    opacity: 0.7;
+    text-shadow:
+      -1px 0 0 #ec4899,  1px 0 0 #22d3ee,
+       0 0 2px rgba(236, 72, 153, 0.4);
+  }
+}
+
+/* Smaller version chip next to the logo: stencil bracket */
+.vr-version {
+  font-family: JetBrains, monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: #22d3ee;
+  opacity: 0.6;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: rgba(34, 211, 238, 0.05);
+  text-transform: uppercase;
+}
+
+/* Strudel's @strudel/draw library lazily creates a fullscreen canvas
+   (#test-canvas) on document.body — position:fixed, 100vw × 100vh — and
+   uses it as the default ctx for .pianoroll() / .draw() / .animate().
+   Any time the LLM emits a pattern that calls those (or a legacy
+   drawings.mjs example does), the visualization paints on top of the
+   entire viewport, including the right Vibe panel.
+
+   Our app uses per-track visualizers (TrackVisualizer.jsx) with their
+   own scoped canvases, so the global overlay is dead weight. Hiding it
+   here keeps the per-track viz untouched while stopping the
+   bleed-through into the right panel. */
+canvas#test-canvas {
+  display: none !important;
+}
