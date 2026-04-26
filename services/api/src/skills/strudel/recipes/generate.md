@@ -25,8 +25,8 @@ the fallback when iterating but the `<current>` block is empty.
      `reference/effects.md` (no `resonance`, no `legato`).
    - Mini-notation strings have balanced brackets / quotes.
    - The whole thing is one expression.
-   - **A visualizer is appended to the outermost expression** (default
-     `.scope()`). This is mandatory — see `rules/output-format.md`.
+   - **No `.scope()` / `.pianoroll()` / `.fscope()` / `.tscope()`** —
+     the host renders the per-track viz on its own canvas.
 
 5. **Check host signals**: if the prompt includes `loop_count`, `time_limit`,
    or `continue_style`, defer to `rules/host-controls.md` for behaviour. Do
@@ -82,10 +82,10 @@ stack(
   s("bd ~ ~ ~, ~ ~ sd ~, hh*8").bank("LinnDrum").gain("0.7 0.6 0.7 0.6"),
   n("0 2 4 5".add("<0 7 5 -2>")).scale("C2:minor").s("gm_acoustic_bass").gain(0.7),
   note("<[c3,eb3,g3,bb3] [f2,ab2,c3,eb3] [g2,bb2,d3,f3] [c3,eb3,g3,bb3]>").s("gm_epiano2").attack(0.05).release(0.6).room(0.4).gain(0.5)
-).slow(2).scope()
+).slow(2)
 ```
 
-Trailing `.scope()` is the mandatory waveform visualizer.
+No trailing `.scope()` — the host owns visualization.
 
 ## Anti-patterns
 

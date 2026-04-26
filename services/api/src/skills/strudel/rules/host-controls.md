@@ -27,7 +27,7 @@ continue_style: true
 stack(
   s("bd*4, ~ cp, hh*8").bank("RolandTR909"),
   note("c2*8".add("<0 7 5 3>")).s("sawtooth").lpf(800).gain(0.6)
-).scope()
+)
 </current>
 
 <no new user prompt>

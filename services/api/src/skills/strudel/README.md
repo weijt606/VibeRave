@@ -24,7 +24,7 @@ SKILL.md                manifest, capability map, suggested loading order
 README.md               this file
 rules/
   output-format.md      hard rules on what the response can contain
-                        (incl. mandatory visualizer + compile self-check)
+                        (one-expression, no viz hint, compile self-check)
   iteration.md          how to handle <current>...</current> blocks
   host-controls.md      loop_count / time_limit / continue_style protocol
   uncertainty.md        markers for unverified info, hallucination guard

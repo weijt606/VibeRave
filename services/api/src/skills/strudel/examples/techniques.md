@@ -5,9 +5,10 @@ techniques. Pull these out when the user asks for the technique by name.
 
 > **Note: these are fragments, not whole programs.** Each snippet illustrates
 > one technique in isolation. When you ship code to the REPL, wrap the
-> technique into a complete `stack(...)` and append a visualizer (`.scope()`
-> by default) per `rules/output-format.md`. Snippets in `examples/genres.md`
-> and `reference/dual-deck.md` are already shaped as ship-ready programs.
+> technique into a complete `stack(...)`. Do **not** append `.scope()` /
+> `.pianoroll()` — the host renders the per-track viz. Snippets in
+> `examples/genres.md` and `reference/dual-deck.md` are already shaped as
+> ship-ready programs.
 
 ## Polyrhythm — `{a, b}`
 
@@ -178,7 +179,7 @@ stack(
     s("bd*4, ~ ~ cp ~, hh*16").bank("RolandTR909"),
     note("c2!4 c2 eb2 c2 g1").s("sawtooth").lpf(sine.range(300,3000).slow(8)).lpq(20).gain(0.65)
   ).pan(1).gain(cosine.range(0.2, 1).slow(16))
-).scope()
+)
 ```
 
 `sine` on left + `cosine` on right at the same `.slow(16)` keeps a 90°-offset

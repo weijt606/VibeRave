@@ -28,7 +28,7 @@ Both decks always audible, just panned to opposite sides:
 stack(
   s("bd*4, [~ cp]*2, hh*8").bank("RolandTR909").pan(0),
   s("bd ~ ~ bd, ~ ~ sd ~, hh*8?").bank("LinnDrum").pan(1)
-).scope()
+)
 ```
 
 Plays a 909 techno groove on the left ear, a LinnDrum lo-fi groove on the
@@ -42,7 +42,7 @@ Volume sloshes between decks every N cycles:
 stack(
   s("bd*4, [~ cp]*2, hh*8").bank("RolandTR909").pan(0).gain(sine.range(0, 1).slow(8)),
   s("bd ~ ~ sd, hh*8?").bank("LinnDrum").pan(1).gain(cosine.range(0, 1).slow(8))
-).scope()
+)
 ```
 
 `sine` on left + `cosine` on right with the **same `.slow(8)`** keeps them
@@ -65,7 +65,7 @@ stack(
     s("bd*4, ~ ~ cp ~, hh*16").bank("RolandTR909").gain("1 .8 1 .8"),
     note("c2!4 c2 eb2 c2 g1").s("sawtooth").lpf(sine.range(300, 3000).slow(8)).lpq(20).gain(0.65)
   ).pan(1).gain(cosine.range(0.2, 1).slow(16))
-).scope()
+)
 ```
 
 `gain(...).range(0.2, 1)` (instead of 0..1) keeps each deck barely audible
@@ -79,7 +79,7 @@ For a more abrupt "channel switch" use a square LFO instead of sine:
 stack(
   patA.pan(0).gain(square.range(0, 1).slow(4)),
   patB.pan(1).gain(square.range(1, 0).slow(4))
-).scope()
+)
 ```
 
 Each deck is on for 2 cycles, off for 2 cycles. Useful for radio-tuner /
@@ -93,7 +93,7 @@ Mimic having one deck "cued" — barely audible while the other plays full:
 stack(
   patA.pan(0).gain(1),
   patB.pan(1).gain(0.15)
-).scope()
+)
 ```
 
 Then switch by running it again with the gains inverted.
