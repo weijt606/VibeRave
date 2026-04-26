@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "VibeRave API — voice → Strudel code generation. Pluggable STT (whisper / vosk / gemini) and LLM (gemini / ollama).",
+  "description": "VibeRave API — voice → Strudel code generation. Pluggable LLM (any OpenAI-compatible endpoint or Ollama) and STT (whisper / vosk local, or any OpenAI-compatible /audio/transcriptions endpoint).",
   "main": "src/index.mjs",
   "scripts": {
     "dev": "node --env-file=../../.env --watch src/index.mjs",
@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
-    "@google/genai": "^0.7.0",
     "@strudel/core": "workspace:*",
     "@strudel/draw": "workspace:*",
     "@strudel/mini": "workspace:*",
     "@strudel/tonal": "workspace:*",
     "@strudel/transpiler": "workspace:*",
     "fastify": "^5.2.1",
+    "openai": "^6.34.0",
     "smart-whisper": "^0.8.1",
     "vosk-koffi": "^1.1.1",
     "wavefile": "^11.0.0"

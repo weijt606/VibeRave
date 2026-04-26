@@ -1,7 +1,12 @@
 export function loadConfig() {
   // LLM_PROVIDER picks which backend the composition root wires.
-  // Valid: 'gemini' (default, cloud) | 'ollama' (local daemon).
-  const provider = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
+  //   'api'    → any OpenAI-compatible endpoint (OpenAI, Gemini's /openai/
+  //              endpoint, OpenRouter, Groq, LM Studio, etc.) — set
+  //              LLM_API_KEY + LLM_BASE_URL + LLM_MODEL
+  //   'ollama' → local Ollama (also OpenAI-compatible at /v1, but kept as
+  //              a separate provider so we can drop the auth requirement
+  //              and pre-fill the base URL)
+  const provider = (process.env.LLM_PROVIDER || 'api').toLowerCase();
 
   return {
     server: {
@@ -11,76 +16,68 @@ export function loadConfig() {
     },
     llm: {
       provider,
-      gemini: {
-        apiKey: process.env.GEMINI_API_KEY ?? null,
-        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      api: {
+        // OpenAI-compatible defaults. baseURL: any provider that speaks
+        // /v1/chat/completions. apiKey: that provider's key.
+        // The frontend can override all three per-request via headers.
+        apiKey: process.env.LLM_API_KEY ?? null,
+        baseURL: process.env.LLM_BASE_URL || 'https://api.openai.com/v1',
+        model: process.env.LLM_MODEL || 'gpt-4o-mini',
         // 0.85 instead of the more common 0.7 default — for live-coding music
         // we actively WANT the model to spread across drum kits, scales, and
         // visualizers rather than collapse onto its single highest-likelihood
-        // "lo-fi LinnDrum + Rhodes" template every time. Combined with
-        // skills/strudel/rules/diversity.md this gives noticeably more varied
-        // output. Override via GEMINI_TEMPERATURE if a particular voice needs
-        // it dialled back.
-        temperature: Number.isFinite(Number(process.env.GEMINI_TEMPERATURE))
-          ? Number(process.env.GEMINI_TEMPERATURE)
+        // template every time. Combined with skills/strudel/rules/diversity.md
+        // this gives noticeably more varied output.
+        temperature: Number.isFinite(Number(process.env.LLM_TEMPERATURE))
+          ? Number(process.env.LLM_TEMPERATURE)
           : 0.85,
       },
       ollama: {
-        baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+        // Ollama's OpenAI-compatible endpoint. No API key needed; pass
+        // any non-empty string to satisfy the SDK.
+        baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1',
+        apiKey: 'ollama',
         model: process.env.OLLAMA_MODEL || 'qwen2.5:14b',
-        // num_ctx — Ollama default is 2K which truncates our ~16K-token skill
-        // prompt into uselessness. Bump to fit the assembled skill plus headroom.
-        numCtx: Number(process.env.OLLAMA_NUM_CTX || 32768),
-        // Thinking-capable models (qwen3:*) emit chain-of-thought before any
-        // answer — fine for research chat, useless for live-coding loops where
-        // we want sub-second code drops.
-        think: /^(1|true|yes|on)$/i.test(process.env.OLLAMA_THINK || ''),
+        temperature: Number.isFinite(Number(process.env.LLM_TEMPERATURE))
+          ? Number(process.env.LLM_TEMPERATURE)
+          : 0.85,
       },
     },
     stt: {
       // STT_PROVIDER picks which transcriber the composition root wires:
-      //   whisper → local smart-whisper (default, no network, ~700-900ms)
-      //   gemini  → Gemini multimodal API (~1-2s, best free-form accuracy;
-      //             uses the same GEMINI_API_KEY as code-gen)
-      //   vosk    → local closed-grammar VOSK (~10ms, only recognises the
-      //             canonical phrases — see vosk-transcriber.mjs)
+      //   whisper → local smart-whisper (no network, ~700-900ms warm)
+      //   vosk    → local closed-grammar VOSK (~10ms, only canonical phrases)
+      //   api     → any OpenAI-compatible /audio/transcriptions endpoint
+      //             (OpenAI Whisper, Groq Whisper, etc.)
       provider: (process.env.STT_PROVIDER || 'whisper').toLowerCase(),
       modelName: process.env.WHISPER_MODEL || 'base.en',
       gpu: process.env.WHISPER_GPU !== '0',
       language: process.env.WHISPER_LANGUAGE || 'auto',
-      // smart-whisper offloads the model after this many seconds idle.
-      // Default ~1 day = effectively resident; set to a small number
-      // to free RAM aggressively, or 300 to match the SDK default.
       offloadSecs: Number(process.env.WHISPER_OFFLOAD_SECS || 86400),
-      // Optional override for the DJ vocab biasing prompt fed to the
-      // decoder as `initial_prompt`. When unset, whisper-transcriber.mjs
-      // uses its built-in DJ/Strudel vocab.
       initialPrompt: process.env.WHISPER_INITIAL_PROMPT || null,
-      // Gemini STT model. gemini-2.5-flash has the broadest free-tier
-      // quota and lands transcripts in ~2s warm.
-      geminiModel: process.env.GEMINI_STT_MODEL || 'gemini-2.5-flash',
-      // VOSK model directory (only used when STT_PROVIDER=vosk). Default
-      // points at the small-en model in services/api/models/ — download
-      // separately, see services/api/README.md.
+      // Cloud STT defaults (only used when STT_PROVIDER=api). Frontend
+      // can override per-request via headers.
+      apiKey: process.env.STT_API_KEY ?? null,
+      apiBaseURL: process.env.STT_BASE_URL || 'https://api.openai.com/v1',
+      apiModel: process.env.STT_MODEL || 'whisper-1',
+      // VOSK model directory (only used when STT_PROVIDER=vosk). Defaults
+      // to services/api/models/vosk-model-small-en-us-0.15 — see
+      // services/api/README.md for the download command.
       voskModelPath: process.env.VOSK_MODEL_PATH || null,
     },
     sessions: {
       dir: process.env.API_SESSIONS_DIR || null,
     },
     dump: {
-      // Writes raw.wav / raw.txt / final.txt / meta.json per voice take so
-      // you can A/B different STT backends and diff transcripts offline.
-      // Default OFF — recordings are PII and disk grows fast. Set
-      // API_DUMP_STAGES=1 to enable for development.
+      // Per-take audio + transcript dumps under data/stage-dumps/. Default
+      // OFF — recordings are PII and disk grows fast. Set API_DUMP_STAGES=1
+      // for local debugging.
       stages: /^(1|true|yes|on)$/i.test(process.env.API_DUMP_STAGES || ''),
       dir: process.env.API_DUMP_DIR || null,
     },
     transcript: {
-      // Optional LLM cleanup pass after STT. Catches recognition errors
-      // the static dictionary in whisper-transcriber can't (artist names,
-      // half-heard phrases, fillers). Default OFF — adds 500-2000ms per
-      // take and the code-gen LLM tolerates loose input well. Set
-      // LLM_CORRECT_TRANSCRIPT=true to enable.
+      // Optional LLM cleanup pass after STT. Off by default — adds 500-2000ms
+      // and the code-gen LLM tolerates loose input well.
       llmCorrect: /^(1|true|yes|on)$/i.test(process.env.LLM_CORRECT_TRANSCRIPT || ''),
     },
   };

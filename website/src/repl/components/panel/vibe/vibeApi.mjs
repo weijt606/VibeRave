@@ -1,6 +1,25 @@
+import { settingsMap } from '../../../../settings.mjs';
+
 export const API_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.PUBLIC_API_URL) ||
   'http://localhost:4322';
+
+// Build the per-request override headers from the current settings.
+// Empty values are omitted so the backend falls back to its env default.
+function buildOverrideHeaders() {
+  const s = settingsMap.get();
+  const h = {};
+  if (s.llmProvider) h['x-llm-provider'] = s.llmProvider;
+  if (s.llmApiKey) h['x-llm-api-key'] = s.llmApiKey;
+  if (s.llmBaseUrl) h['x-llm-base-url'] = s.llmBaseUrl;
+  if (s.llmModel) h['x-llm-model'] = s.llmModel;
+  if (typeof s.llmTemperature === 'number') h['x-llm-temperature'] = String(s.llmTemperature);
+  if (s.sttProvider) h['x-stt-provider'] = s.sttProvider;
+  if (s.sttApiKey) h['x-stt-api-key'] = s.sttApiKey;
+  if (s.sttBaseUrl) h['x-stt-base-url'] = s.sttBaseUrl;
+  if (s.sttModel) h['x-stt-model'] = s.sttModel;
+  return h;
+}
 
 export async function fetchSessionMessages(sessionId) {
   const res = await fetch(`${API_URL}/sessions/${encodeURIComponent(sessionId)}`);
@@ -14,7 +33,10 @@ export async function fetchSessionMessages(sessionId) {
 export async function postGenerate({ sessionId, prompt, currentCode, signal }) {
   const res = await fetch(`${API_URL}/generate`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...buildOverrideHeaders(),
+    },
     body: JSON.stringify({ sessionId, prompt, currentCode }),
     signal,
   });
@@ -35,7 +57,10 @@ export async function postTranscribe({ sessionId, wavBlob, lang }) {
   const url = `${API_URL}/transcribe?${params.toString()}`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'content-type': 'audio/wav' },
+    headers: {
+      'content-type': 'audio/wav',
+      ...buildOverrideHeaders(),
+    },
     body: wavBlob,
   });
   const data = await res.json().catch(() => ({}));
@@ -58,7 +83,10 @@ export async function deleteSession(sessionId) {
 export async function postGenerateFix({ currentCode, error, signal }) {
   const res = await fetch(`${API_URL}/generate/fix`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...buildOverrideHeaders(),
+    },
     body: JSON.stringify({ currentCode, error }),
     signal,
   });

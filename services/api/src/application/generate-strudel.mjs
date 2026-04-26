@@ -107,14 +107,18 @@ function sanitizeHistory(history) {
 
 /**
  * @param {{
- *   llmClient: import('./ports.mjs').LlmClient | null,
+ *   defaultLlmClient: import('./ports.mjs').LlmClient | null,
+ *   llmClientFor?: (overrides: object | null) => import('./ports.mjs').LlmClient | null,
  *   loadSystemPrompt: import('./ports.mjs').SystemPromptProvider,
  * }} deps
  */
-export function makeGenerateStrudel({ llmClient, loadSystemPrompt }) {
-  return async function generateStrudel({ prompt, currentCode, history }) {
+export function makeGenerateStrudel({ defaultLlmClient, llmClientFor, loadSystemPrompt }) {
+  return async function generateStrudel({ prompt, currentCode, history, llmOverrides }) {
+    const llmClient = llmClientFor ? llmClientFor(llmOverrides) : defaultLlmClient;
     if (!llmClient) {
-      throw new ServiceUnavailable('GEMINI_API_KEY is not set in the root .env file.');
+      throw new ServiceUnavailable(
+        'No LLM client configured. Set LLM_API_KEY in the root .env or open the API Settings panel.',
+      );
     }
     if (typeof prompt !== 'string' || prompt.trim() === '') {
       throw new InvalidInput('Body must include a non-empty string `prompt` field.');
@@ -136,7 +140,7 @@ export function makeGenerateStrudel({ llmClient, loadSystemPrompt }) {
         history: turns,
       });
     } catch (err) {
-      throw new UpstreamError(`Gemini error: ${err.message}`);
+      throw new UpstreamError(`LLM error: ${err.message}`);
     }
 
     const cleaned = stripCodeFences((completion.text ?? '').trim());

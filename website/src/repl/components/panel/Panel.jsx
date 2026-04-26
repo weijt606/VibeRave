@@ -4,6 +4,7 @@ import { StrudelIcon } from '@src/repl/components/icons/StrudelIcon';
 import { useSettings, setIsZen, setIsPanelOpened, setActiveFooter as setTab } from '../../../settings.mjs';
 import '../../Repl.css';
 import { useLogger } from '../useLogger';
+import { ApiSettingsTab } from './ApiSettingsTab';
 import { ConsoleTab } from './ConsoleTab';
 import { FilesTab } from './FilesTab';
 import { Reference } from './Reference';
@@ -209,6 +210,7 @@ export function RightPanel({ context }) {
 
 const tabNames = {
   vibe: 'vibe',
+  api: 'api',
   sounds: 'sounds',
   reference: 'reference',
   console: 'console',
@@ -249,6 +251,8 @@ function PanelContent({ context, tab }) {
       return <SettingsTab started={context.started} />;
     case tabNames.files:
       return <FilesTab />;
+    case tabNames.api:
+      return <ApiSettingsTab />;
     case tabNames.vibe:
     default:
       return <VibeTab />;

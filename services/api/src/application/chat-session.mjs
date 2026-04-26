@@ -72,8 +72,8 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
   // returned regardless so the user always sees something — annotated with
   // `validated: false` plus the error so the client can decide how loud to
   // be about it.
-  async function generateValidated({ prompt, currentCode, history }) {
-    let result = await generateStrudel({ prompt, currentCode, history });
+  async function generateValidated({ prompt, currentCode, history, llmOverrides }) {
+    let result = await generateStrudel({ prompt, currentCode, history, llmOverrides });
 
     // META + code: validate the seed code and retry on failure with a
     // META-aware fix prompt. Without this, a `new_track + drums` turn
@@ -91,6 +91,7 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
           prompt: fixPrompt,
           currentCode: result.code,
           history,
+          llmOverrides,
         });
         attempts++;
         // Retry returned plain code (no META): the model dropped the
@@ -138,6 +139,7 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
         prompt: fixPrompt,
         currentCode: result.code,
         history,
+        llmOverrides,
       });
       attempts++;
       if (next.noChange) break;
@@ -167,7 +169,7 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
     // Stateless one-shot: no session history loaded, no messages stored.
     // Used by the client-side runtime-error recovery loop, where appending
     // synthetic "fix this NaN" turns to the user-visible chat would be noise.
-    async fix({ currentCode, error }) {
+    async fix({ currentCode, error, llmOverrides }) {
       if (typeof currentCode !== 'string' || currentCode.trim() === '') {
         throw new InvalidInput('Body must include a non-empty string `currentCode` field.');
       }
@@ -179,6 +181,7 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
         prompt: fixPrompt,
         currentCode,
         history: [],
+        llmOverrides,
       });
       return {
         code: result.code,
@@ -191,7 +194,7 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
       };
     },
 
-    async sendTurn({ sessionId, prompt, currentCode }) {
+    async sendTurn({ sessionId, prompt, currentCode, llmOverrides }) {
       assertSessionId(sessionId);
       if (typeof prompt !== 'string' || prompt.trim() === '') {
         throw new InvalidInput('Body must include a non-empty string `prompt` field.');
@@ -200,7 +203,7 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
       const record = await sessionStore.load(sessionId);
       const history = toLlmHistory(record.messages);
 
-      const result = await generateValidated({ prompt, currentCode, history });
+      const result = await generateValidated({ prompt, currentCode, history, llmOverrides });
 
       const ts = new Date().toISOString();
       record.messages.push({ role: 'user', text: prompt, ts });

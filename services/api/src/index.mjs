@@ -3,10 +3,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadConfig } from './config.mjs';
-import { createGeminiClient } from './infrastructure/gemini-client.mjs';
-import { createOllamaClient } from './infrastructure/ollama-client.mjs';
+import { createOpenAICompatibleClient } from './infrastructure/openai-compatible-client.mjs';
+import { createOpenAICompatibleStt } from './infrastructure/openai-compatible-stt.mjs';
 import { createWhisperTranscriber } from './infrastructure/whisper-transcriber.mjs';
-import { createGeminiStt } from './infrastructure/gemini-stt.mjs';
 import { createVoskTranscriber } from './infrastructure/vosk-transcriber.mjs';
 import { createFileSessionStore } from './infrastructure/file-session-store.mjs';
 import { createFileMetricsStore } from './infrastructure/file-metrics-store.mjs';
@@ -63,23 +62,19 @@ const loadSystemPrompt = async () => {
 // during startup instead of on the first /generate request.
 await loadSystemPrompt();
 
-// LLM_PROVIDER picks which backend to use:
-//   gemini → Google AI Studio (default; needs GEMINI_API_KEY, free tier OK)
-//   ollama → local Ollama daemon (needs the model already pulled)
+// LLM_PROVIDER picks the default backend the composition root wires.
+// Per-request overrides (sent from the frontend Settings UI as headers)
+// build a one-off client; this is just the fallback used when the user
+// hasn't configured anything yet.
 function buildLlmClient(llmCfg) {
-  if (llmCfg.provider === 'ollama') {
-    return createOllamaClient(llmCfg.ollama);
-  }
-  return createGeminiClient(llmCfg.gemini);
+  const cfg = llmCfg.provider === 'ollama' ? llmCfg.ollama : llmCfg.api;
+  return createOpenAICompatibleClient(cfg);
 }
-const llmClient = buildLlmClient(config.llm);
-console.log(`[llm] provider=${config.llm.provider}`);
+const defaultLlmClient = buildLlmClient(config.llm);
+console.log(`[llm] provider=${config.llm.provider} ${defaultLlmClient ? `model=${(config.llm.provider === 'ollama' ? config.llm.ollama : config.llm.api).model}` : '(no key configured — provide one via Settings)'}`);
 
 // STT_PROVIDER picks which transcriber to wire. All conform to the same
 // Transcriber port (transcribe(pcm, {language, wavBuffer}) → {text}).
-//   whisper → local smart-whisper (no network, ~700-900ms warm)
-//   gemini  → Gemini multimodal API (~1-2s, best free-form accuracy)
-//   vosk    → local closed-grammar VOSK (~10ms, only canonical phrases)
 function buildTranscriber(sttCfg) {
   if (sttCfg.provider === 'vosk') {
     const modelPath =
@@ -92,22 +87,24 @@ function buildTranscriber(sttCfg) {
       return createWhisperTranscriber(sttCfg);
     }
   }
-  if (sttCfg.provider === 'gemini') {
-    const t = createGeminiStt({
-      apiKey: config.llm.gemini.apiKey,
-      model: sttCfg.geminiModel,
+  if (sttCfg.provider === 'api') {
+    const t = createOpenAICompatibleStt({
+      apiKey: sttCfg.apiKey,
+      baseURL: sttCfg.apiBaseURL,
+      model: sttCfg.apiModel,
       language: sttCfg.language,
     });
     if (!t) {
-      console.warn('[stt] STT_PROVIDER=gemini but GEMINI_API_KEY is missing — falling back to whisper');
+      console.warn('[stt] STT_PROVIDER=api but STT_API_KEY is missing — falling back to whisper');
       return createWhisperTranscriber(sttCfg);
     }
     return t;
   }
   return createWhisperTranscriber(sttCfg);
 }
-const transcriber = buildTranscriber(config.stt);
-console.log(`[stt] provider=${config.stt.provider} model=${transcriber.getModelId()}`);
+const defaultTranscriber = buildTranscriber(config.stt);
+console.log(`[stt] provider=${config.stt.provider} model=${defaultTranscriber.getModelId()}`);
+
 const sessionStore = createFileSessionStore({
   dir: config.sessions.dir || resolve(__dirname, '..', 'data', 'sessions'),
 });
@@ -122,18 +119,70 @@ const stageDumpStore = createStageDumpStore({
 });
 console.log(`[stage-dump] ${config.dump.stages ? `enabled → ${config.dump.dir || 'data/stage-dumps'}` : 'disabled'}`);
 
-// Optional post-STT LLM cleanup. Catches recognition errors the static
-// dictionary in whisper-transcriber can't (artist names, half-heard
-// phrases, fillers). Default OFF; set LLM_CORRECT_TRANSCRIPT=true to
-// enable (adds one Gemini/Ollama call per voice take).
 const transcriptNormalizer = config.transcript.llmCorrect
-  ? makeTranscriptNormalizer({ llmClient })
+  ? makeTranscriptNormalizer({ llmClient: defaultLlmClient })
   : null;
 console.log(`[transcript-normalizer] ${transcriptNormalizer ? 'enabled' : 'disabled'}`);
 
-const generateStrudel = makeGenerateStrudel({ llmClient, loadSystemPrompt });
+// ─────────────────────────────────────────────────────────────────────
+// Per-request override factories. The HTTP layer reads the user's API
+// settings from request headers and asks for a one-off client when the
+// frontend Settings UI is configured. Light cache keyed on a config hash
+// keeps the SDK from being re-instantiated on every request.
+
+const llmClientCache = new Map(); // key → LlmClient
+function llmClientFor(overrides) {
+  if (!overrides) return defaultLlmClient;
+  const cfg = {
+    provider: overrides.provider || config.llm.provider,
+    apiKey: overrides.apiKey ?? null,
+    baseURL: overrides.baseURL || null,
+    model: overrides.model || null,
+    temperature: typeof overrides.temperature === 'number' ? overrides.temperature : undefined,
+  };
+  if (!cfg.apiKey || !cfg.model) return defaultLlmClient;
+  const key = `${cfg.provider}|${cfg.baseURL || ''}|${cfg.model}|${cfg.apiKey.slice(-6)}`;
+  let c = llmClientCache.get(key);
+  if (!c) {
+    c = createOpenAICompatibleClient({
+      apiKey: cfg.apiKey,
+      baseURL: cfg.baseURL || (cfg.provider === 'ollama' ? config.llm.ollama.baseURL : config.llm.api.baseURL),
+      model: cfg.model,
+      temperature: cfg.temperature ?? config.llm.api.temperature,
+    });
+    if (!c) return defaultLlmClient;
+    llmClientCache.set(key, c);
+  }
+  return c;
+}
+
+const transcriberCache = new Map(); // key → Transcriber
+function transcriberFor(overrides) {
+  if (!overrides || !overrides.provider) return defaultTranscriber;
+  const provider = overrides.provider;
+  if (provider === 'whisper') return defaultTranscriber.getModelId().startsWith('whisper') ? defaultTranscriber : buildTranscriber({ ...config.stt, provider: 'whisper' });
+  if (provider === 'vosk') return defaultTranscriber.getModelId().startsWith('vosk') ? defaultTranscriber : buildTranscriber({ ...config.stt, provider: 'vosk' });
+  if (provider === 'api') {
+    const apiKey = overrides.apiKey ?? null;
+    const baseURL = overrides.baseURL || config.stt.apiBaseURL;
+    const model = overrides.model || config.stt.apiModel;
+    if (!apiKey) return defaultTranscriber;
+    const key = `api|${baseURL}|${model}|${apiKey.slice(-6)}`;
+    let t = transcriberCache.get(key);
+    if (!t) {
+      t = createOpenAICompatibleStt({ apiKey, baseURL, model, language: config.stt.language });
+      if (!t) return defaultTranscriber;
+      transcriberCache.set(key, t);
+    }
+    return t;
+  }
+  return defaultTranscriber;
+}
+
+const generateStrudel = makeGenerateStrudel({ defaultLlmClient, llmClientFor, loadSystemPrompt });
 const transcribeAudio = makeTranscribeAudio({
-  transcriber,
+  defaultTranscriber,
+  transcriberFor,
   metricsStore,
   stageDumpStore,
   transcriptNormalizer,
@@ -145,13 +194,15 @@ const server = await createServer({
   config,
   deps: {
     config,
-    llmClient,
-    transcriber,
+    defaultLlmClient,
+    defaultTranscriber,
     sessionStore,
     metricsStore,
     generateStrudel,
     transcribeAudio,
     chatSession,
+    llmClientFor,
+    transcriberFor,
   },
 });
 

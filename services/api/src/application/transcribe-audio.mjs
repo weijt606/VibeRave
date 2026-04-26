@@ -13,7 +13,8 @@ import {
  * posts that to `/generate` unchanged.
  *
  * @param {{
- *   transcriber: import('./ports.mjs').Transcriber | null,
+ *   defaultTranscriber: import('./ports.mjs').Transcriber | null,
+ *   transcriberFor?: (overrides: object | null) => import('./ports.mjs').Transcriber | null,
  *   metricsStore?: { append: (record: object) => Promise<void> } | null,
  *   stageDumpStore?: { beginTake: (sessionId: string|null) => null | {
  *     dir: string,
@@ -25,12 +26,14 @@ import {
  * }} deps
  */
 export function makeTranscribeAudio({
-  transcriber,
+  defaultTranscriber,
+  transcriberFor,
   metricsStore = null,
   stageDumpStore = null,
   transcriptNormalizer = null,
 }) {
-  return async function transcribeAudio({ wavBuffer, language, sessionId }) {
+  return async function transcribeAudio({ wavBuffer, language, sessionId, sttOverrides }) {
+    const transcriber = transcriberFor ? transcriberFor(sttOverrides) : defaultTranscriber;
     if (!transcriber) {
       throw new ServiceUnavailable(
         'Transcriber is not initialised. Check STT_PROVIDER and the corresponding model / API key.',

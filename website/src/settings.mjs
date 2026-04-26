@@ -76,9 +76,108 @@ export const defaultSettings = {
   // zh-CN, which butchers English prompts via the wrong phonetic model.
   // Defaulting to en-US matches the demo language.
   vibeVoiceLang: 'en-US',
+  // ─── API settings (LLM + STT) ─────────────────────────────────────────
+  // Live in localStorage and are sent as override headers on every API
+  // request. Backend never persists them. Empty values mean "use the
+  // backend's env-configured default", so a plain dev clone with no
+  // browser-side config still works as long as .env has values.
+  llmProvider: 'api',          // 'api' | 'ollama'
+  llmApiKey: '',
+  llmBaseUrl: 'https://api.openai.com/v1',
+  llmModel: 'gpt-4o-mini',
+  llmTemperature: 0.85,
+  sttProvider: 'whisper',      // 'whisper' | 'vosk' | 'api'
+  sttApiKey: '',
+  sttBaseUrl: 'https://api.openai.com/v1',
+  sttModel: 'whisper-1',
   // Persisted multi-track state.
   tracks: '[]',
 };
+
+// One-click LLM provider presets — fill the URL + model fields, the
+// user just pastes their key. Source of truth for the API Settings UI.
+export const LLM_PRESETS = [
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    provider: 'api',
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini',
+    keyHelp: 'https://platform.openai.com/api-keys',
+  },
+  {
+    id: 'gemini',
+    label: 'Google Gemini',
+    provider: 'api',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    model: 'gemini-2.5-flash',
+    keyHelp: 'https://aistudio.google.com/app/apikey',
+  },
+  {
+    id: 'groq',
+    label: 'Groq',
+    provider: 'api',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    model: 'llama-3.3-70b-versatile',
+    keyHelp: 'https://console.groq.com/keys',
+  },
+  {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    provider: 'api',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    model: 'anthropic/claude-3.5-sonnet',
+    keyHelp: 'https://openrouter.ai/settings/keys',
+  },
+  {
+    id: 'ollama',
+    label: 'Ollama (local)',
+    provider: 'ollama',
+    baseUrl: 'http://localhost:11434/v1',
+    model: 'qwen2.5:14b',
+    keyHelp: null,
+  },
+];
+
+// One-click STT provider presets.
+export const STT_PRESETS = [
+  {
+    id: 'whisper',
+    label: 'Whisper (local)',
+    provider: 'whisper',
+    baseUrl: '',
+    model: '',
+    keyHelp: null,
+    needsKey: false,
+  },
+  {
+    id: 'vosk',
+    label: 'VOSK (local, ~10ms)',
+    provider: 'vosk',
+    baseUrl: '',
+    model: '',
+    keyHelp: null,
+    needsKey: false,
+  },
+  {
+    id: 'openai-whisper',
+    label: 'OpenAI Whisper',
+    provider: 'api',
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'whisper-1',
+    keyHelp: 'https://platform.openai.com/api-keys',
+    needsKey: true,
+  },
+  {
+    id: 'groq-whisper',
+    label: 'Groq Whisper',
+    provider: 'api',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    model: 'whisper-large-v3-turbo',
+    keyHelp: 'https://console.groq.com/keys',
+    needsKey: true,
+  },
+];
 
 let search = null;
 if (typeof window !== 'undefined') {
@@ -141,6 +240,16 @@ export const setActiveFooter = (tab) => settingsMap.setKey('activeFooter', tab);
 export const setVibePttKey = (code) => settingsMap.setKey('vibePttKey', code);
 export const setVibeAutoApply = (bool) => settingsMap.setKey('vibeAutoApply', !!bool);
 export const setVibeVoiceLang = (lang) => settingsMap.setKey('vibeVoiceLang', lang);
+// API settings setters — wired to the API Settings tab.
+export const setLlmProvider = (v) => settingsMap.setKey('llmProvider', v);
+export const setLlmApiKey = (v) => settingsMap.setKey('llmApiKey', v);
+export const setLlmBaseUrl = (v) => settingsMap.setKey('llmBaseUrl', v);
+export const setLlmModel = (v) => settingsMap.setKey('llmModel', v);
+export const setLlmTemperature = (v) => settingsMap.setKey('llmTemperature', Number(v));
+export const setSttProvider = (v) => settingsMap.setKey('sttProvider', v);
+export const setSttApiKey = (v) => settingsMap.setKey('sttApiKey', v);
+export const setSttBaseUrl = (v) => settingsMap.setKey('sttBaseUrl', v);
+export const setSttModel = (v) => settingsMap.setKey('sttModel', v);
 export const setPanelPinned = (bool) => settingsMap.setKey('isPanelPinned', bool);
 export const setIsPanelOpened = (bool) => settingsMap.setKey('isPanelOpen', bool);
 export const setSettingsTab = (tab) => settingsMap.setKey('settingsTab', tab);

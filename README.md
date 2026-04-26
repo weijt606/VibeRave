@@ -1,5 +1,7 @@
 # VibeRave
 
+![VibeRave — voice → music engine](src-tauri/images/viberave-banner.png)
+
 **Vibe-code rave music with your voice.**
 Hold a key, speak a command — VibeRave hot-swaps the running pattern in
 the [Strudel](https://strudel.cc) editor without breaking the beat.

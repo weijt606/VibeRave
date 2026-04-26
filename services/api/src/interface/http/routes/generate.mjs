@@ -1,7 +1,10 @@
+import { readLlmOverrides } from '../override-headers.mjs';
+
 export function registerGenerate(fastify, { chatSession }) {
   fastify.post('/generate', async (request) => {
     const { sessionId, prompt, currentCode } = request.body ?? {};
-    return chatSession.sendTurn({ sessionId, prompt, currentCode });
+    const llmOverrides = readLlmOverrides(request.headers);
+    return chatSession.sendTurn({ sessionId, prompt, currentCode, llmOverrides });
   });
 
   // Stateless fix endpoint: the browser hits this when its hot-swapped
@@ -10,6 +13,7 @@ export function registerGenerate(fastify, { chatSession }) {
   // synthetic turn never lands in the user-visible chat history.
   fastify.post('/generate/fix', async (request) => {
     const { currentCode, error } = request.body ?? {};
-    return chatSession.fix({ currentCode, error });
+    const llmOverrides = readLlmOverrides(request.headers);
+    return chatSession.fix({ currentCode, error, llmOverrides });
   });
 }
