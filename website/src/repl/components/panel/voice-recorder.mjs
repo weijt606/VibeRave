@@ -1,9 +1,19 @@
 // Browser-side WAV recorder. Captures mic audio, downsamples to 16 kHz mono,
-// and encodes a 16-bit PCM WAV blob — the exact format both AIC and Whisper
-// expect, so the backend can decode without ffmpeg or libopus.
+// and encodes a 16-bit PCM WAV blob — the format the backend STT (whisper /
+// vosk / OpenAI-compat) expects, so it can decode without ffmpeg or libopus.
 //
 // Uses ScriptProcessorNode (deprecated but universally supported and tiny).
 // AudioWorklet would be the modern path; not worth the build wiring here.
+//
+// CRITICAL: we reuse Strudel's *existing* AudioContext instead of creating
+// a new one. Spinning up a second AudioContext during playback causes the
+// browser to renegotiate the audio device — that's the audible glitch /
+// stutter the user hears when they hit push-to-talk while music is playing.
+// Sharing the context means no renegotiation; cost is that capture runs at
+// Strudel's playback context rate (typically 44.1 or 48 kHz), which the
+// encode path below handles by resampling to 16 kHz on stop().
+
+import { getAudioContext } from '@strudel/webaudio';
 
 const TARGET_SAMPLE_RATE = 16000;
 
@@ -25,6 +35,7 @@ export function createVoiceRecorder(opts = {}) {
   let stream = null;
   let source = null;
   let processor = null;
+  let nodesToDispose = null;
   /** @type {Float32Array[]} */
   let chunks = [];
   let captureRate = TARGET_SAMPLE_RATE;
@@ -39,13 +50,12 @@ export function createVoiceRecorder(opts = {}) {
     silenceFired = false;
     voiceSeen = false;
 
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    // Try to ask the browser for 16 kHz natively; if it can't honour the
-    // hint we resample at encode time. Either way the math below is correct.
-    try {
-      ctx = new Ctx({ sampleRate: TARGET_SAMPLE_RATE });
-    } catch {
-      ctx = new Ctx();
+    // Reuse Strudel's existing AudioContext (the one playing the music)
+    // instead of creating a new one — see file header comment. We resample
+    // to 16 kHz at encode time on stop().
+    ctx = getAudioContext();
+    if (ctx.state === 'suspended') {
+      try { await ctx.resume(); } catch {}
     }
     captureRate = ctx.sampleRate;
 
@@ -86,12 +96,15 @@ export function createVoiceRecorder(opts = {}) {
     };
 
     source.connect(processor);
-    // ScriptProcessorNode only fires onaudioprocess if connected to a
-    // destination — we route to a muted gain node so we don't echo back.
+    // ScriptProcessorNode only fires onaudioprocess when there's a path to
+    // the destination. We route through a muted gain node so the mic
+    // doesn't echo into playback. Stash the sink so stop() can disconnect
+    // it cleanly without leaking audio nodes into Strudel's shared graph.
     const sink = ctx.createGain();
     sink.gain.value = 0;
     processor.connect(sink);
     sink.connect(ctx.destination);
+    nodesToDispose = { sink };
   }
 
   /**
@@ -103,17 +116,20 @@ export function createVoiceRecorder(opts = {}) {
     try {
       processor?.disconnect();
       source?.disconnect();
+      nodesToDispose?.sink?.disconnect();
     } catch {}
     stream?.getTracks().forEach((t) => t.stop());
-    try {
-      await ctx.close();
-    } catch {}
+    // CRITICAL: do NOT close ctx — it's the SHARED Strudel audio context
+    // that's also playing the user's music. Closing it would kill all
+    // sound. We just disconnect the recorder's nodes and let the GC sweep
+    // them; the context stays alive.
     const localChunks = chunks;
     const localRate = captureRate;
     ctx = null;
     stream = null;
     source = null;
     processor = null;
+    nodesToDispose = null;
     chunks = [];
 
     if (localChunks.length === 0) return null;
