@@ -156,16 +156,19 @@
 }
 
 /* Strudel's @strudel/draw library lazily creates a fullscreen canvas
-   (#test-canvas) on document.body — position:fixed, 100vw × 100vh — and
-   uses it as the default ctx for .pianoroll() / .draw() / .animate().
-   Any LLM-generated pattern that calls those needs it visible to show
-   visuals, but it also can't overlay the right-side Vibe / API panel.
+   (#test-canvas) on document.body — position:fixed, 100vw × 100vh —
+   and uses it as the default ctx for .pianoroll() / .draw() /
+   .animate(). Any LLM-generated pattern that calls those would paint
+   on top of the entire viewport, including over the left tracks
+   column and the right Vibe panel.
 
-   Pinning it to z-index: 0 puts it BEHIND every panel (panels use the
-   default stacking context plus explicit bg colors, so they stack on
-   top). The viz shows through the editor / track-list areas where
-   nothing opaque is layered on top, and is cleanly hidden by the
-   right-side panels. */
+   Hiding it forces all visualisation through the per-track canvases
+   in TrackVisualizer.jsx (which are scoped and don't overflow). The
+   skill prompts in services/api/src/skills/strudel/rules/output-format.md
+   already tell the LLM not to emit .pianoroll() / .scope(), so the
+   only loss is when a model ignores that rule — and the per-track
+   pianoroll painter (selectable from the per-track viz dropdown)
+   covers that case anyway. */
 canvas#test-canvas {
-  z-index: 0 !important;
+  display: none !important;
 }
