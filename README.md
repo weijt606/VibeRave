@@ -83,51 +83,64 @@ accurate) implementations — you can run the whole stack with no paid services.
 
 ## Quickstart
 
-### Requirements
+> **Goal: from `git clone` to your first voice-driven track in under 5 minutes.**
 
-- **Node ≥ 20.6** (the `--env-file` flag the API uses landed in 20.6)
-- **pnpm** ≥ 9
-- A microphone, a quiet-ish room
-- One of:
-  - An LLM API key for any OpenAI-compatible provider — paste it into the
-    in-app **API Settings** panel after launch (no `.env` editing required), or
-  - **Ollama** running locally with a model pulled (e.g. `ollama pull qwen2.5:14b`)
+### 0. Prerequisites
 
-### Install + run
+| | Requirement |
+|---|---|
+| Runtime | **Node ≥ 20.6** &nbsp;·&nbsp; **pnpm ≥ 9** &nbsp;·&nbsp; Chrome / Edge / Firefox 118+ for `getUserMedia` |
+| Hardware | A microphone — a USB headset works great; built-in laptop mic is fine for testing |
+| Account (pick one) | An API key from any OpenAI-compatible provider (free tiers exist for Groq, OpenAI, OpenRouter, Qwen, Gemini), **or** [Ollama](https://ollama.com/) running locally with a model pulled |
+
+### 1. Clone + install + start
 
 ```bash
 git clone https://github.com/weijt606/VibeRave.git
 cd VibeRave
 pnpm install
-cp .env.example .env
-
+cp .env.example .env        # leave the placeholders — config happens in-app
 pnpm dev
-# Web:  http://localhost:4321
-# API:  http://localhost:4322
 ```
 
-Then open http://localhost:4321/, click the **api** tab in the side panel,
-pick a provider preset (OpenAI / Groq / OpenRouter / Qwen DashScope / Ollama /
-Custom), and paste your API key. Settings live in your browser only — they're
-never persisted on the server.
-
-The first time you record audio, smart-whisper auto-downloads the `base.en`
-model (~150 MB) into `services/api/models/whisper/`. To use a larger model
-edit `WHISPER_MODEL` in `.env`.
-
-### Switching STT backends
-
-Pick one in the **API Settings** panel, or pre-configure via env:
-
-```bash
-# .env
-
-STT_PROVIDER=whisper   # default — local, no network, ~700-900 ms
-STT_PROVIDER=vosk      # local, ~10 ms, closed-grammar (download model first)
-STT_PROVIDER=api       # any OpenAI-compatible /audio/transcriptions endpoint
+You should see two URLs in the terminal:
+```
+[web]  http://localhost:4321/
+[api]  Server listening at http://localhost:4322
 ```
 
-For VOSK, download a model and place it in `services/api/models/`:
+### 2. Configure your provider in the browser
+
+1. Open <http://localhost:4321/>.
+2. Click the **api** tab in the right-hand panel.
+3. **Language Model** section → pick a preset chip (OpenAI / Groq / OpenRouter / Qwen / Ollama / Custom), paste your API key.
+4. Click **Test LLM** → you should see `✓ <ms> · <model>`. If you see ✗, fix the error before continuing — almost always wrong key, wrong base URL, or wrong model name.
+5. **Speech-to-Text** section → leave it on **Whisper** for the first run (zero config, downloads automatically).
+6. Click **Test STT** → `✓ <ms> · base.en`.
+
+> Settings persist in your browser's localStorage. They never leave your machine except as headers on requests to your own backend, which forwards them to the chosen provider.
+
+### 3. Talk to it
+
+1. Click the `+` at the top of the left column to create your first track.
+2. Hold **Space** anywhere on the page, say *"lo-fi beat at eighty BPM"*, release.
+3. The transcript appears in the textarea, auto-sends after 2 seconds, and the editor below fills with Strudel code that starts playing.
+4. Holding Space again, say *"more reverb"*. The new pattern hot-swaps on the next cycle.
+
+If you'd rather click than talk, the chip row above the textarea has 10 canonical prompts (`lo-fi beat`, `Berghain techno`, `add reverb`, `stop all`, …) — click one to fill the input.
+
+### Switching STT backends later
+
+The fastest path is the **api** tab; the table below describes when to pick which.
+
+| Backend | Best for | Setup |
+|---|---|---|
+| **Whisper** (default) | Privacy / offline / no setup | Auto-downloads `base.en` (~150 MB) on first record. Edit `WHISPER_MODEL` in `.env` for `medium.en` / `large-v3-turbo`. |
+| **VOSK** | Sub-15 ms latency on the canonical command vocabulary | One-time model download — see "Optional: VOSK setup" below. |
+| **API** (OpenAI Whisper / Groq Whisper / self-hosted) | Best free-form accuracy | Pick the preset, paste a key, **Test STT**. |
+| **Qwen DashScope native** | DashScope ASR (paraformer / fun-asr) | Native adapter, separate from the OpenAI-compatible path. |
+
+#### Optional: VOSK setup
 
 ```bash
 cd services/api/models
@@ -135,10 +148,22 @@ curl -LO https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
 unzip vosk-model-small-en-us-0.15.zip && rm vosk-model-small-en-us-0.15.zip
 ```
 
-The grammar VOSK matches against lives in
-`services/api/src/infrastructure/vosk-transcriber.mjs` (`DEMO_GRAMMAR`).
-It mirrors the prompt-chip list in the frontend so the click chips and
-the recognized vocabulary stay in sync.
+Then pick **VOSK (local, ~10ms)** in the api panel. The matched vocabulary
+mirrors the prompt-chip list (`DEMO_GRAMMAR` in
+`services/api/src/infrastructure/vosk-transcriber.mjs`) — add phrases there
+to expand what VOSK will accept.
+
+### Troubleshooting
+
+| Symptom | Likely cause / fix |
+|---|---|
+| **Test LLM ✗ HTTP 401** | Wrong API key or you pasted into the wrong provider preset. |
+| **Test LLM ✗ HTTP 404** | Wrong base URL or model name. Double-check the preset filled the right URL — some providers nest the path (e.g. `/v1` vs `/openai/v1`). |
+| **Test STT ✗ HTTP 404 on DashScope** | DashScope's OpenAI-compat shim has no `/audio/transcriptions`. Use the **Qwen (DashScope native)** preset instead of plain Custom. |
+| **First voice take takes 5+ seconds** | Whisper's `medium.en` model is downloading or pre-warming. Subsequent takes are ~700-900 ms. |
+| **No mic prompt / "Could not start recording"** | Browser blocked microphone access. Click the lock icon in the URL bar → allow Microphone. Reload. |
+| **Tracks drift / beats don't align** | Should not happen on `main` — sync is hard-coded on. If you see it, file an issue with browser + Strudel pattern code. |
+| **Browser console shows CORS errors** | The web app is not on `localhost:4321` (or wherever the API expects). The API has CORS open by default; check your reverse proxy rewrites if you've fronted it with one. |
 
 ---
 
@@ -240,7 +265,84 @@ pnpm build         # production web build
 `services/api` runs under `node --watch` so source-file edits restart
 the server automatically; the web side is Astro's standard HMR.
 
+<br/>
+
 ---
+
+<br/>
+
+## Contributing
+
+PRs are welcome. A few conventions to keep things sane:
+
+### How to add a new STT or LLM backend
+
+The whole pipeline is one-file-per-adapter. To add a backend:
+
+1. Create the adapter in `services/api/src/infrastructure/<name>-stt.mjs`
+   (or `<name>-client.mjs` for an LLM). It must conform to the
+   `Transcriber` / `LlmClient` shape declared in
+   `services/api/src/application/ports.mjs`.
+2. Wire it into `services/api/src/index.mjs#buildTranscriber` (or
+   `buildLlmClient`) plus the per-request `transcriberFor` /
+   `llmClientFor` cache.
+3. Add a preset to `website/src/settings.mjs` so users can pick it
+   from the API tab in one click.
+
+That's it — no plugin system, no registry, no config schema. Each
+backend is a small file. See `vosk-transcriber.mjs` and
+`dashscope-stt.mjs` for examples that follow non-OpenAI protocols.
+
+### How to extend the voice grammar (VOSK)
+
+VOSK runs in closed-grammar mode. To make a new phrase recognisable:
+
+1. Add it to `DEMO_GRAMMAR` in
+   `services/api/src/infrastructure/vosk-transcriber.mjs`.
+2. If the phrase contains a word missing from the small-en
+   pronunciation lex (Berghain, lo-fi, hi-hat), spell it phonetically
+   in the grammar and add a regex to `CANONICALISE` that renames it
+   back to the canonical form before the LLM sees it.
+3. Optionally add it to the chip row in
+   `website/src/repl/components/panel/VibeTab.jsx#PROMPT_CHIPS` so
+   users can discover it.
+
+### Pull requests
+
+- Branch off `main`. Keep PRs small and focused — one concern per PR.
+- Run `pnpm format-check` and `pnpm lint` before pushing.
+- Don't add new dependencies casually. The repo intentionally has a
+  small dependency surface; pitch the use case in the PR description.
+- For changes to user-visible UI, attach a before / after screenshot
+  in the PR description.
+- Don't commit anything under `services/api/data/` (PII recordings)
+  or `services/api/models/` (multi-GB binaries). Both are gitignored.
+
+### Code style
+
+- ESM throughout. No CommonJS. No mixed `require` + `import`.
+- Prefer small files with single responsibility. The clean-architecture
+  layering (`application` / `domain` / `infrastructure` / `interface`)
+  is intentional — adapter code goes in `infrastructure`, business
+  logic goes in `application`, neither touches the other.
+- Comments explain *why*, not *what*. Naming should make the *what*
+  obvious; comments are reserved for non-obvious constraints, hidden
+  invariants, or workaround context.
+
+### Filing issues
+
+Useful repro info:
+- **Browser + version + OS** (Chrome 120 / macOS 14, etc.)
+- **STT and LLM provider** picked in the API tab
+- **The exact phrase you said** + what the chat / textarea ended up showing
+- A copy-paste of the relevant `[api]` log line, or the failing request shown in the browser DevTools network tab
+- Whether `pnpm test` and `pnpm lint` pass on `main`
+
+<br/>
+
+---
+
+<br/>
 
 ## Built on
 
