@@ -236,6 +236,17 @@ export function ApiSettingsTab() {
             Sub-15&nbsp;ms latency. Download a model first; see <code className="font-mono">services/api/README.md</code>.
           </p>
         )}
+
+        {settings.sttProvider === 'api' && (
+          <p className="text-xs opacity-50 leading-snug border-l-2 border-muted pl-2">
+            Any endpoint that implements OpenAI&apos;s <code className="font-mono">/audio/transcriptions</code> shape
+            works out of the box (OpenAI Whisper, Groq Whisper, Qwen DashScope, self-hosted
+            whisper.cpp servers, etc.). For engines with a different protocol — e.g.
+            websocket-streaming ASR like Qwen&apos;s <code className="font-mono">fun-asr-realtime</code> — you&apos;ll
+            need to add an adapter at <code className="font-mono">services/api/src/infrastructure/</code> and
+            wire it into <code className="font-mono">index.mjs#buildTranscriber</code>.
+          </p>
+        )}
       </Section>
 
       <div className="flex items-center gap-2">

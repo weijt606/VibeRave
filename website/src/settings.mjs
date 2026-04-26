@@ -130,11 +130,29 @@ export const LLM_PRESETS = [
     keyHelp: 'https://openrouter.ai/settings/keys',
   },
   {
+    id: 'qwen',
+    label: 'Qwen (DashScope)',
+    provider: 'api',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    model: 'qwen-plus',
+    keyHelp: 'https://bailian.console.aliyun.com/?apiKey=1',
+  },
+  {
     id: 'ollama',
     label: 'Ollama (local)',
     provider: 'ollama',
     baseUrl: 'http://localhost:11434/v1',
     model: 'qwen2.5:14b',
+    keyHelp: null,
+  },
+  {
+    id: 'custom-llm',
+    label: 'Custom…',
+    provider: 'api',
+    // Empty defaults — user fills baseURL/model/key. Any OpenAI-
+    // compatible Chat Completions endpoint works.
+    baseUrl: '',
+    model: '',
     keyHelp: null,
   },
 ];
@@ -175,6 +193,32 @@ export const STT_PRESETS = [
     baseUrl: 'https://api.groq.com/openai/v1',
     model: 'whisper-large-v3-turbo',
     keyHelp: 'https://console.groq.com/keys',
+    needsKey: true,
+  },
+  {
+    id: 'qwen-asr',
+    label: 'Qwen (DashScope)',
+    provider: 'api',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    // DashScope's OpenAI-compatible mode exposes paraformer / fun-asr
+    // family models via /audio/transcriptions. Override the model field
+    // for fun-asr-realtime, paraformer-v2, etc.
+    model: 'paraformer-v2',
+    keyHelp: 'https://bailian.console.aliyun.com/?apiKey=1',
+    needsKey: true,
+  },
+  {
+    id: 'custom-stt',
+    label: 'Custom…',
+    provider: 'api',
+    // Empty defaults — user fills the fields. The custom path goes
+    // through the same OpenAI-compatible /audio/transcriptions adapter,
+    // so any endpoint that speaks that protocol works out of the box.
+    // Non-compatible engines (e.g. websocket-streaming ASR) need a
+    // dedicated adapter — see services/api/src/infrastructure/.
+    baseUrl: '',
+    model: '',
+    keyHelp: null,
     needsKey: true,
   },
 ];
