@@ -58,6 +58,10 @@ export function createTrackEditor({
   // .scope() / .pianoroll() in the user's code still work alongside.
   const vizRef = { current: initialViz || DEFAULT_VIZ };
   const painterOpts = { trackId, analyzerId };
+  // Track whether the painter chain is alive — a tiny corner heartbeat
+  // dot pulses with `time`, so even if all painters silently fail or
+  // produce no visible output, the user can see at-a-glance that
+  // onDraw is firing. Disable by setting trackId === '__nopulse__'.
   const onDraw = (haps, time, painters) => {
     const ctx = drawContextRef.current;
     if (!ctx) return;
@@ -71,6 +75,15 @@ export function createTrackEditor({
         painter(ctx, time, haps, drawTime);
       } catch {}
     });
+    // Heartbeat: 3-px circle in the top-left, opacity oscillating with
+    // `time` so it visibly pulses. Confirms the draw loop is alive even
+    // when the chosen painter has nothing to draw (silent / no haps /
+    // no analyser yet). Cheap; ~50 µs per frame.
+    const pulseOpacity = 0.35 + 0.25 * Math.sin(time * 6);
+    ctx.fillStyle = `rgba(34, 211, 238, ${pulseOpacity.toFixed(3)})`;
+    ctx.beginPath();
+    ctx.arc(8, 8, 3, 0, Math.PI * 2);
+    ctx.fill();
   };
 
   const editor = new StrudelMirror({

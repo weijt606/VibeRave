@@ -61,10 +61,18 @@ const scope = (ctx, _time, _haps, _drawTime, opts) => {
   const { canvas } = ctx;
   const midY = canvas.height / 2;
   if (!analyser) {
+    // Idle baseline — 60% opacity dashed line so it's clearly visible
+    // even before audio starts (analyser only registers after the first
+    // hap that carries `analyze: <id>` plays).
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
     ctx.beginPath();
     ctx.moveTo(0, midY);
     ctx.lineTo(canvas.width, midY);
     ctx.stroke();
+    ctx.restore();
     return;
   }
   const data = getAnalyzerData('time', id);
@@ -99,8 +107,17 @@ const waveform = (ctx, _time, _haps, _drawTime, opts) => {
   const { canvas } = ctx;
   const midY = canvas.height / 2;
   if (!analyser) {
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.fillRect(0, midY - 1, canvas.width, 2);
+    // Idle baseline — visible 2-px dashed line so the viz lane reads
+    // as "alive but waiting for audio" rather than "broken".
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.moveTo(0, midY);
+    ctx.lineTo(canvas.width, midY);
+    ctx.stroke();
+    ctx.restore();
     return;
   }
   const data = getAnalyzerData('time', id);
