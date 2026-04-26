@@ -24,6 +24,15 @@ export async function createServer({ deps, config }) {
     if (err instanceof DomainError) {
       return reply.code(err.status).send({ error: err.message, code: err.code });
     }
+    // Upstream provider errors thrown by the LLM/STT adapters carry an
+    // explicit `status` (typically 502) plus a `code` like
+    // 'llm_upstream_failed' / 'stt_upstream_failed' and a message that
+    // already names the provider + status. Pass these through so the
+    // frontend can show "OpenAI returned 401: Incorrect API key" instead
+    // of a generic internal_error.
+    if (typeof err?.status === 'number' && typeof err?.code === 'string' && err.code.endsWith('_upstream_failed')) {
+      return reply.code(err.status).send({ error: err.message, code: err.code });
+    }
     request.log.error({ err }, 'unhandled error');
     return reply.code(500).send({ error: 'internal_error' });
   });

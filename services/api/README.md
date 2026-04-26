@@ -1,9 +1,11 @@
 # @viberave/api
 
 Fastify backend that turns voice into Strudel code. Pluggable STT
-(`whisper` / `vosk` / `gemini`) and LLM (`gemini` / `ollama`) backends
-selected per env. See the [root README](../../README.md) for the
-project overview.
+(`whisper` / `vosk` / `api`) and LLM (`api` / `ollama`) backends. The
+`api` providers can target any OpenAI-compatible endpoint — settings
+travel as per-request override headers from the in-app **API Settings**
+panel, no `.env` editing required for end-users. See the
+[root README](../../README.md) for the project overview.
 
 ## Local model setup
 
@@ -68,7 +70,7 @@ The server listens on `API_PORT` (default `4322`). Boot log shows the
 active LLM + STT backend:
 
 ```
-[llm] provider=gemini
+[llm] provider=api model=gpt-4o-mini
 [stt] provider=whisper model=base.en
 [stage-dump] disabled
 [transcript-normalizer] disabled

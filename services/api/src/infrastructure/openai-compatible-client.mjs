@@ -43,13 +43,29 @@ export function createOpenAICompatibleClient({ apiKey, baseURL, model, temperatu
         { role: 'user', content: userMessage },
       ];
 
-      const response = await client.chat.completions.create({
-        model,
-        messages,
-        // Per-call override lets the transcript normalizer go deterministic
-        // (temp 0) while code-gen keeps the configured diversity.
-        temperature: typeof tempOverride === 'number' ? tempOverride : temperature,
-      });
+      let response;
+      try {
+        response = await client.chat.completions.create({
+          model,
+          messages,
+          // Per-call override lets the transcript normalizer go deterministic
+          // (temp 0) while code-gen keeps the configured diversity.
+          temperature: typeof tempOverride === 'number' ? tempOverride : temperature,
+        });
+      } catch (err) {
+        const status = err?.status ?? err?.response?.status ?? 0;
+        const upstreamMsg =
+          err?.error?.message ||
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'unknown error';
+        const where = baseURL || 'OpenAI default';
+        const message = `LLM request to ${where} (model "${model}") failed${status ? ` with HTTP ${status}` : ''}: ${upstreamMsg}`;
+        const wrapped = new Error(message);
+        wrapped.status = 502;
+        wrapped.code = 'llm_upstream_failed';
+        throw wrapped;
+      }
 
       const text = response.choices?.[0]?.message?.content ?? '';
       return { text, model: response.model || model };

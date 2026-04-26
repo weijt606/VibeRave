@@ -53,12 +53,34 @@ export function createOpenAICompatibleStt({ apiKey, baseURL, model, language = '
       // OpenAI's SDK expects a File-like object with a name + arrayBuffer.
       // The Web File API works fine here under modern Node (≥ 20).
       const file = new File([wav], 'voice.wav', { type: 'audio/wav' });
-      const response = await client.audio.transcriptions.create({
-        file,
-        model,
-        ...(lang && lang !== 'auto' ? { language: lang } : {}),
-        response_format: 'json',
-      });
+      let response;
+      try {
+        response = await client.audio.transcriptions.create({
+          file,
+          model,
+          ...(lang && lang !== 'auto' ? { language: lang } : {}),
+          response_format: 'json',
+        });
+      } catch (err) {
+        // Surface the real upstream cause instead of a generic 500. Common
+        // failure shapes:
+        //   • 404  → endpoint doesn't speak /audio/transcriptions (e.g.
+        //            user picked a chat-only baseURL).
+        //   • 401  → bad / missing API key.
+        //   • 400 + "model_not_found" → wrong model id for this provider.
+        const status = err?.status ?? err?.response?.status ?? 0;
+        const upstreamMsg =
+          err?.error?.message ||
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'unknown error';
+        const where = baseURL || 'OpenAI default';
+        const message = `STT request to ${where} (model "${model}") failed${status ? ` with HTTP ${status}` : ''}: ${upstreamMsg}`;
+        const wrapped = new Error(message);
+        wrapped.status = 502;
+        wrapped.code = 'stt_upstream_failed';
+        throw wrapped;
+      }
       const text = (response.text ?? '').trim();
       return { text };
     },

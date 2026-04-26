@@ -1,4 +1,5 @@
 import { Model, Recognizer, setLogLevel } from 'vosk-koffi';
+import { existsSync, readdirSync } from 'node:fs';
 
 // Closed grammar: the recogniser will only ever output one of these phrases
 // (or [unk]). Mirrors the prompt-chip list in

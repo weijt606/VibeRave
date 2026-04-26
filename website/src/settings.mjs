@@ -106,14 +106,6 @@ export const LLM_PRESETS = [
     keyHelp: 'https://platform.openai.com/api-keys',
   },
   {
-    id: 'gemini',
-    label: 'Google Gemini',
-    provider: 'api',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    model: 'gemini-2.5-flash',
-    keyHelp: 'https://aistudio.google.com/app/apikey',
-  },
-  {
     id: 'groq',
     label: 'Groq',
     provider: 'api',
