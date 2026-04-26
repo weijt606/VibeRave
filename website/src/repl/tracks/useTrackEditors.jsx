@@ -17,7 +17,12 @@ import { spotlight as runSpotlight } from './spotlight.mjs';
 const EMPTY_STATE = { started: false, isDirty: false, error: null, activeCode: '', pending: false };
 
 export function useTrackEditors() {
-  const { isSyncEnabled, audioEngineTarget, prebakeScript } = useSettings();
+  const { audioEngineTarget, prebakeScript } = useSettings();
+  // VibeRave is multi-track by design — every track MUST share the global
+  // cycle clock or beats drift apart immediately. We hard-code sync on
+  // here regardless of the user's `isSyncEnabled` setting so a stale
+  // localStorage value from before this change can't break the rhythm.
+  const isSyncEnabled = true;
   const editorsRef = useRef({}); // { [trackId]: StrudelMirror }
   const [editorStates, setEditorStates] = useState({}); // { [trackId]: replState }
 

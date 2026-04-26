@@ -42,7 +42,12 @@ export const defaultSettings = {
   isAutoCompletionEnabled: false,
   isTooltipEnabled: false,
   isFlashEnabled: true,
-  isSyncEnabled: false,
+  // Default ON — VibeRave is multi-track by design and tracks need to share
+  // one cycle clock or their beats drift apart immediately. Each track
+  // editor passes this through to StrudelMirror.sync, which routes the
+  // scheduler through the global cyclist registry instead of spinning up
+  // a per-track clock.
+  isSyncEnabled: true,
   isLineWrappingEnabled: false,
   isPatternHighlightingEnabled: true,
   isTabIndentationEnabled: false,

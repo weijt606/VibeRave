@@ -74,8 +74,11 @@ function readSilenceMs() {
 // How long to listen for runtime errors after a hot-swap before deciding
 // the new code is fine. The scheduler emits `getTrigger error: ...` log
 // events as soon as a hap with a bad sound/value tries to play, which is
-// usually within the first cycle.
-const RUNTIME_ERROR_WINDOW_MS = 1500;
+// usually within the first cycle. Tightened from 1500 → 600 ms so a
+// broken swap finds its way to /generate/fix faster and the audible
+// gap between "old pattern stopped emitting" and "fixed pattern starts"
+// is much shorter.
+const RUNTIME_ERROR_WINDOW_MS = 600;
 // Logger events (see packages/core/logger.mjs) we treat as runtime errors
 // worth asking the LLM to fix.
 const RUNTIME_ERROR_PREFIX_RE = /^\[(getTrigger|cyclist|repl)\]\s*error:\s*(.+)$/i;
@@ -111,10 +114,13 @@ function watchForRuntimeError(ms = RUNTIME_ERROR_WINDOW_MS) {
 // store, then hot-swap the live editor.
 //
 // When `allowFix` is true, we also listen for runtime errors from the
-// scheduler for ~1.5s after the swap; if any fire, we POST the failing
+// scheduler for ~600 ms after the swap; if any fire, we POST the failing
 // code + first error to /generate/fix and re-apply the corrected version
-// once. The recursive call is gated to one retry so a model that keeps
-// regenerating bad code can't melt the API.
+// once. If the fix LLM can't help (noChange / network error), we revert
+// to the previous code so the music keeps playing instead of leaving
+// the scheduler stuck on a broken pattern. The recursive fix call is
+// gated to one retry so a model that keeps regenerating bad code can't
+// melt the API.
 //
 // IMPORTANT: never call .stop() / .repl.stop() on the editor here. If
 // the new pattern has a runtime error, the scheduler keeps its previous
@@ -124,11 +130,16 @@ async function applyCodeToSelectedTrack(code, onError, { allowFix = false } = {}
   if (!code) return;
   const id = $selectedTrackId.get();
   if (!id) return;
-  setTrackCode(id, code);
   if (typeof window === 'undefined') return;
   // window.strudelMirror always points at the selected track's editor.
   const editor = window.strudelMirror;
   if (!editor) return;
+  // Snapshot the previous editor code so we can revert if the new code
+  // turns out to be a runtime-error trap that the fix LLM can't handle.
+  // Without this, a bad LLM swap leaves the scheduler emitting silence
+  // and the user perceives the previous music as "stopped".
+  const previousCode = typeof editor.code === 'string' ? editor.code : '';
+  setTrackCode(id, code);
   editor.setCode(code);
   // Arm the runtime-error watcher *before* awaiting evaluate so we don't
   // miss errors emitted between the eval finishing and the next tick.
@@ -142,6 +153,22 @@ async function applyCodeToSelectedTrack(code, onError, { allowFix = false } = {}
   if (!watcher) return;
   const runtimeError = await watcher;
   if (!runtimeError) return;
+
+  async function revertToPrevious(reason) {
+    if (!previousCode) {
+      onError?.(reason);
+      return;
+    }
+    setTrackCode(id, previousCode);
+    editor.setCode(previousCode);
+    try {
+      await editor.evaluate(true);
+      onError?.(`${reason} — reverted to previous pattern`);
+    } catch (err) {
+      onError?.(`${reason} (revert also failed: ${err?.message || err})`);
+    }
+  }
+
   try {
     const fix = await postGenerateFix({ currentCode: code, error: runtimeError });
     if (fix?.code && !fix.noChange) {
@@ -149,10 +176,15 @@ async function applyCodeToSelectedTrack(code, onError, { allowFix = false } = {}
       // fix itself is broken — surface the original error instead.
       await applyCodeToSelectedTrack(fix.code, onError, { allowFix: false });
     } else {
-      onError?.(`runtime error: ${runtimeError}`);
+      // Fix LLM couldn't help — keep the music going by reverting.
+      await revertToPrevious(`runtime error: ${runtimeError}`);
     }
   } catch (err) {
-    onError?.(`runtime error: ${runtimeError} (auto-fix failed: ${err?.message || err})`);
+    // Network / 500 from the fix endpoint — also revert so we don't leave
+    // the scheduler holding a broken pattern.
+    await revertToPrevious(
+      `runtime error: ${runtimeError} (auto-fix failed: ${err?.message || err})`,
+    );
   }
 }
 
