@@ -139,6 +139,16 @@ export function deleteTrack(id) {
   }
 }
 
+// Wipe every track in one atomic store update so the deletion useEffect
+// in useTrackEditors disposes them all in a single React batch. Going
+// through deleteTrack(id) in a loop would also work but generates N
+// store writes / N re-renders for no benefit.
+export function clearAllTracks() {
+  writeTracks([]);
+  $tracks.set([]);
+  $selectedTrackId.set(null);
+}
+
 export function updateTrack(id, patch) {
   const list = $tracks.get();
   let changed = false;

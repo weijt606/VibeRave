@@ -106,14 +106,37 @@ export function useTrackEditors() {
     }
   }, [tracks]);
 
-  // When the user deletes a track, dispose its editor.
+  // When the user deletes a track, dispose its editor. This is the SINGLE
+  // disposal path — useReplContext.deleteTrack just updates the store and
+  // we react here, so we never double-stop or partially clean up.
+  //
+  // Order matters:
+  //   1. volumeRef → 0 BEFORE stop, so any hap that's already mid-trigger
+  //      gets multiplied to silence (volumeRef is read at trigger time in
+  //      makeTrackOutput). Without this users hear a "click" when a kick
+  //      is in flight at the moment of delete.
+  //   2. ed.stop() halts further hap scheduling on this track's cyclist
+  //      instance. Per-instance — does NOT affect other tracks' cyclists.
+  //   3. ed.clear() removes the document-level listeners StrudelMirror
+  //      registers in its constructor (start-repl, repl-evaluate,
+  //      repl-stop, repl-toggle-comment). Skipping this leaks listeners
+  //      that fire on every global event for the rest of the page life.
+  //   4. dispose analyser registry slot + drop the editorsRef entry.
+  //   5. setEditorStates removes the entry so $editorStates / $anyPlaying
+  //      drop the dead key.
   useEffect(() => {
     const liveIds = new Set(tracks.map((t) => t.id));
     Object.keys(editorsRef.current).forEach((id) => {
       if (!liveIds.has(id)) {
         const ed = editorsRef.current[id];
         try {
+          if (ed?.volumeRef) ed.volumeRef.current = 0;
+        } catch {}
+        try {
           ed?.stop?.();
+        } catch {}
+        try {
+          ed?.clear?.();
         } catch {}
         if (ed?.analyzerId) disposeAnalyzerArtifacts(ed.analyzerId);
         delete editorsRef.current[id];

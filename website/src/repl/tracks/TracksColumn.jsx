@@ -1,4 +1,4 @@
-import { PlusIcon, StopIcon } from '@heroicons/react/16/solid';
+import { PlusIcon, StopIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { TrackCard } from './TrackCard.jsx';
 import { CodePanel } from './CodePanel.jsx';
 
@@ -9,6 +9,7 @@ export function TracksColumn({ context }) {
     selectTrack,
     addTrack,
     deleteTrack,
+    clearAllTracks,
     renameTrack,
     togglePlayTrack,
     spotlightTrack,
@@ -20,6 +21,17 @@ export function TracksColumn({ context }) {
 
   // Click a header to expand it. Click the already-expanded one to collapse.
   const onSelect = (id) => selectTrack(selectedTrackId === id ? null : id);
+
+  // Confirm before wiping — track deletion can't be undone (no soft-delete
+  // or trash bin). A native confirm() is enough; this is rare-but-final.
+  const onClearAll = () => {
+    if (!tracks.length) return;
+    const msg =
+      tracks.length === 1
+        ? 'Delete this track? This cannot be undone.'
+        : `Delete all ${tracks.length} tracks? This cannot be undone.`;
+    if (window.confirm(msg)) clearAllTracks?.();
+  };
 
   return (
     <div className="flex flex-col grow bg-background min-h-0 min-w-0">
@@ -41,6 +53,16 @@ export function TracksColumn({ context }) {
         >
           <StopIcon className="w-4 h-4" />
           <span>Stop all</span>
+        </button>
+        <button
+          type="button"
+          onClick={onClearAll}
+          disabled={!tracks.length}
+          title="Delete every track (asks for confirmation)"
+          className="flex-1 flex items-center justify-center gap-1 py-2 text-sm text-red-400 opacity-80 hover:opacity-100 hover:bg-red-500/10 border-l border-muted disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+        >
+          <TrashIcon className="w-4 h-4" />
+          <span>Clear all</span>
         </button>
       </div>
       <div className="flex flex-col grow overflow-auto min-h-0">

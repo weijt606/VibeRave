@@ -23,6 +23,7 @@ import {
   selectTrack,
   addTrack as addTrackToStore,
   deleteTrack as deleteTrackFromStore,
+  clearAllTracks as clearAllTracksFromStore,
   renameTrack as renameTrackInStore,
   setTrackCode,
   setTrackViz as setTrackVizInStore,
@@ -122,16 +123,20 @@ export function useReplContext() {
     return t;
   }, []);
 
-  const deleteTrack = useCallback(
-    (id) => {
-      const ed = getEditor(id);
-      try {
-        ed?.stop?.();
-      } catch {}
-      deleteTrackFromStore(id);
-    },
-    [getEditor],
-  );
+  // Single-source disposal: just remove from the store, useTrackEditors
+  // reacts and runs the full fade → stop → clear → dispose flow. Don't
+  // ed.stop() here too — the duplicate call previously could fire while
+  // the disposal useEffect was already mid-flight.
+  const deleteTrack = useCallback((id) => {
+    deleteTrackFromStore(id);
+  }, []);
+
+  // "Clear all" — atomic store wipe. The deletion useEffect picks up the
+  // empty list and disposes every editor in one React batch. UI must
+  // confirm before calling — see TracksColumn's button.
+  const clearAllTracks = useCallback(() => {
+    clearAllTracksFromStore();
+  }, []);
 
   return {
     // selected-track shortcuts (legacy contract for header buttons)
@@ -152,6 +157,7 @@ export function useReplContext() {
     selectTrack,
     addTrack,
     deleteTrack,
+    clearAllTracks,
     renameTrack: renameTrackInStore,
     setTrackViz: setTrackVizInStore,
     mountTrack: editors.mountTrack,
