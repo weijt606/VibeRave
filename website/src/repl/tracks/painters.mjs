@@ -150,6 +150,102 @@ const waveform = (ctx, _time, _haps, _drawTime, opts) => {
   ctx.fill();
 };
 
+// Chromatic aberration oscilloscope — the same triggered-trace logic as
+// `scope`, but stamped three times: a magenta copy offset 2px left, a
+// cyan copy offset 2px right, and a thin white core. Uses additive
+// (`globalCompositeOperation = 'lighter'`) blending so where the colours
+// overlap they sum to white — visually identical to the .vr-logo CSS
+// chromatic aberration. The offset only becomes obvious on transients
+// with steep slopes (drum hits, pluck attacks); steady-state tones stay
+// mostly-white with a subtle colour fringe.
+//
+// NOTE: colours are hard-coded (#ec4899 / #22d3ee) instead of read from
+// CSS vars — Canvas2D doesn't have a getComputedStyle path to a context.
+// If you ever rebrand by editing --vr-accent-* in index.css, sync the
+// constants below by hand. The duplication is annotated so search picks
+// it up.
+const CHROMATIC_MAGENTA = 'rgba(236, 72, 153, 0.85)'; // sync with --vr-accent-magenta
+const CHROMATIC_CYAN = 'rgba(34, 211, 238, 0.85)';    // sync with --vr-accent-cyan
+const CHROMATIC_OFFSET = 2; // px — matches .vr-logo's text-shadow offset
+
+const chromaticScope = (ctx, _time, _haps, _drawTime, opts) => {
+  const id = opts?.analyzerId ?? 1;
+  const analyser = analysers[id];
+  const { canvas } = ctx;
+  const midY = canvas.height / 2;
+
+  if (!analyser) {
+    // Idle baseline carries the same chromatic-aberration look so the
+    // viz lane reads as branded even before audio starts.
+    ctx.save();
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.globalCompositeOperation = 'lighter';
+
+    ctx.strokeStyle = 'rgba(236, 72, 153, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(-CHROMATIC_OFFSET, midY);
+    ctx.lineTo(canvas.width - CHROMATIC_OFFSET, midY);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(34, 211, 238, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(CHROMATIC_OFFSET, midY);
+    ctx.lineTo(canvas.width + CHROMATIC_OFFSET, midY);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.beginPath();
+    ctx.moveTo(0, midY);
+    ctx.lineTo(canvas.width, midY);
+    ctx.stroke();
+
+    ctx.restore();
+    return;
+  }
+
+  const data = getAnalyzerData('time', id);
+  const n = analyser.frequencyBinCount;
+  let trigger = 0;
+  for (let i = 1; i < n; i++) {
+    if (data[i - 1] > 0 && data[i] <= 0) { trigger = i; break; }
+  }
+  const slice = canvas.width / Math.max(n - trigger, 1);
+  const amp = canvas.height * 0.42;
+
+  // One trace, parameterised by horizontal offset. The closure over
+  // `data`, `trigger`, `slice`, `amp`, `midY` keeps the inner loop tight.
+  function tracePath(xOffset) {
+    ctx.beginPath();
+    let x = xOffset;
+    for (let i = trigger; i < n; i++) {
+      const y = midY - data[i] * amp;
+      if (i === trigger) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+      x += slice;
+    }
+    ctx.stroke();
+  }
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineWidth = 1.5;
+
+  ctx.strokeStyle = CHROMATIC_MAGENTA;
+  tracePath(-CHROMATIC_OFFSET);
+
+  ctx.strokeStyle = CHROMATIC_CYAN;
+  tracePath(CHROMATIC_OFFSET);
+
+  // Thin white core so the actual signal stays readable when the
+  // chromatic offsets pull apart on high-amplitude transients.
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.lineWidth = 1;
+  tracePath(0);
+
+  ctx.restore();
+};
+
 // Scrolling log-frequency spectrogram. Maintains a per-track snapshot of
 // the previous frame in `spectrogramFrames` so each tick only has to
 // shift the prior image and paint the rightmost column.
@@ -204,11 +300,12 @@ export const PAINTERS = {
   waveform: { label: 'Waveform', paint: waveform, shape: 'wide' },
   spectrum: { label: 'Spectrum', paint: spectrum, shape: 'wide' },
   scope: { label: 'Scope', paint: scope, shape: 'wide' },
+  chromaticScope: { label: 'Chromatic', paint: chromaticScope, shape: 'wide' },
   spiral: { label: 'Spiral', paint: spiral, shape: 'square' },
 };
 
 export const VIZ_KEYS = Object.keys(PAINTERS);
-export const DEFAULT_VIZ = 'waveform';
+export const DEFAULT_VIZ = 'scope';
 
 export function getPainter(viz) {
   return PAINTERS[viz]?.paint || PAINTERS[DEFAULT_VIZ].paint;

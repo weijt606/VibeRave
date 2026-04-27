@@ -13,7 +13,7 @@ export function TrackVizPicker({ value, onChange }) {
         onChange?.(e.target.value);
       }}
       title="Visualization"
-      className="bg-background border border-muted rounded px-1 py-0.5 text-[11px] text-foreground hover:opacity-80 focus:outline-none"
+      className="bg-background border border-muted rounded pl-1.5 pr-5 py-0.5 text-[11px] text-foreground hover:opacity-80 focus:outline-none"
     >
       {Object.entries(PAINTERS).map(([key, def]) => (
         <option key={key} value={key}>
