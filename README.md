@@ -17,6 +17,7 @@
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
   <a href="#input-modes">Input modes</a> ·
+  <a href="#prompt-cookbook">Prompt cookbook</a> ·
   <a href="#backend-matrix">Backends</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="LICENSE">License</a>
@@ -174,7 +175,7 @@ pick whichever input mode feels right:
 1. Click any chip above the textarea (`lo-fi beat`, `Berghain techno`, `add reverb`, …) — it fills the prompt.
 2. Edit if you want, then press <kbd>Enter</kbd> or click **Send**.
 
-If you'd rather click than talk, the chip row above the textarea has 10 canonical prompts (`lo-fi beat`, `Berghain techno`, `add reverb`, `stop all`, …) — click one to fill the input.
+> Don't know what to say? Jump straight to the [Prompt cookbook](#prompt-cookbook) — it has session walkthroughs and one-liners for lo-fi, Berghain techno, jazz progressions, hyperpop, and more.
 
 ### Switching STT backends later
 
@@ -283,22 +284,120 @@ backend is one new file in `infrastructure/` plus a branch in
 
 ---
 
-## Command reference
+## Prompt cookbook
 
-Phrases the system handles well — works the same whether you speak them,
-type them, or click a chip:
+What kinds of prompts produce what kinds of music? VibeRave is opinionated:
+the skill prompt that drives the LLM has 16 hand-tuned genre templates,
+explicit chord / mode / FM / vowel knowledge, and a mutation cheatsheet
+for common iteration commands. Use this section as a starting menu.
 
-| Category | Examples |
+### Vocabulary at a glance
+
+| Category | Phrases the system handles cleanly |
 |---|---|
-| **Generation** | `lo-fi beat at 80 bpm`, `Berghain techno`, `drum and bass`, `acid bass`, `house at 120` |
-| **Drums** | `add hi-hat`, `mute kick`, `double drums`, `more snare` |
-| **Effects** | `add reverb`, `more delay`, `make it dubby`, `make it darker` |
-| **Stems** | `more bass`, `bring back the lead`, `mute the pad` |
-| **Transport** | `play`, `pause`, `stop all`, `open a new track` |
+| **Genre / vibe** | `lo-fi beat at 80 bpm`, `Berghain techno`, `minimal techno`, `house at 120`, `drum and bass at 174`, `acid bass`, `ambient pad`, `dub at 76 bpm`, `trap, half-time`, `IDM broken beats`, `chiptune / 8-bit`, `hyperpop`, `dark drone`, `funky disco`, `jazzy chill at 90` |
+| **Drums** | `add hi-hat`, `mute kick`, `more snare`, `double drums`, `swap drums for a 909 kit`, `swap to LinnDrum`, `harder kick` |
+| **Effects** | `add reverb`, `more delay`, `make it dubby`, `make it darker`, `more crush`, `add a phaser` |
+| **Stems / synths** | `more bass`, `deeper bass`, `harder bass` (FM), `bring back the lead`, `mute the pad`, `add an arp`, `vocal-y filter` (formant) |
+| **Harmony** | `Cm7 to Am7 to Fmaj7`, `play in dorian`, `phrygian feel`, `ii-V-I in C`, `darker / brooding` (minor + low lpf) |
+| **Energy** | `more energetic`, `more minimal`, `make it faster / slower`, `fast(2)`, `half-time` |
+| **Transport** | `play`, `pause`, `stop all`, `restart`, `open a new track`, `kill it` |
 
-The 10 chips above the input mirror the most-used prompts. Voice is fastest
-for these short commands; typing is best for precise edits the LLM might
-mis-interpret from speech ("raise lpf to 1200 on the bass layer").
+### Session walkthroughs
+
+#### Build a lo-fi study beat (3 turns)
+
+| Turn | Prompt | What you hear |
+|---|---|---|
+| 1 | *"lo-fi beat at eighty bpm"* | LinnDrum kit + saw bass + Rhodes chords (C–Am–G–Eb), slow swing, ~80 BPM |
+| 2 | *"add reverb on the rhodes"* | Same pattern, `room(0.7)` on the Rhodes layer; drums + bass untouched |
+| 3 | *"make it sleepier"* | LPF drops, attack/release lengthen, slight slow |
+
+#### Berghain → minimal techno → drum and bass (multi-track)
+
+| Turn | Prompt | What you hear |
+|---|---|---|
+| 1 | *"Berghain techno at one thirty-eight"* | 132 BPM dark/hypnotic — 909 kick, delay-drowned clap, minimal hats, sub bass |
+| 2 | *"harder bass"* | Bass swaps from sawtooth+lpf to FM synth (`.s("sine").fmh(2).fmi(...)`) — metallic, more aggressive |
+| 3 | *"open a new track. minimal techno"* | Track 2 starts in sync — sparse 130 BPM, just kick + ticks |
+| 4 | *"open a new track. drum and bass at one seventy-four"* | Track 3 — 174 BPM breakbeat, Amen-style chops |
+| 5 | *"stop all"* | All three tracks stop on the next cycle |
+
+#### Jazz harmonic exploration (chord + mode prompts)
+
+| Turn | Prompt | What you hear |
+|---|---|---|
+| 1 | *"Cm7 to Fm7 to Bb7 to Ebmaj7, dorian, ninety bpm"* | `chord(...).voicing().anchor("c4")` over LinnDrum brushes + walking acoustic bass |
+| 2 | *"make the chord more dubby"* | `delay(0.5)` + `delaytime(0.375)` + `delayfeedback(0.6)` on the chord layer; bass and drums untouched |
+| 3 | *"add a walking bass in c minor"* | `gm_acoustic_bass` scale walk added to the `stack` |
+
+#### Hyperpop sound design
+
+| Turn | Prompt | What you hear |
+|---|---|---|
+| 1 | *"hyperpop at one sixty bpm"* | 160 BPM, square lead, triangle bass, F major, `.crush(8)` on the master |
+| 2 | *"more crush"* | Crush bit-depth drops to 4-5 |
+| 3 | *"vocal-y filter on the lead"* | `.vowel("<a e i o>")` cycling on the square lead |
+
+### Single-shot one-liners
+
+Drop these into the textarea (or speak them) for instant results.
+
+| Prompt | Style |
+|---|---|
+| *"give me a chill lo-fi beat at 80 bpm with rhodes chords"* | Lo-fi hip-hop |
+| *"deep house at 120, sidechain on the pad"* | Deep house with the classic ducking pad |
+| *"Berghain techno at 132 with FM bass"* | Dark / industrial |
+| *"jungle at 174 with amen break and sub bass"* | DnB / jungle |
+| *"ambient pad in c minor, slow, lots of reverb"* | Drone / dark ambient |
+| *"acid 303 bassline, lpf swept, lpq high"* | Acid |
+| *"trap at 140 half-time, 808 sub, hi-hat rolls"* | Trap |
+| *"chiptune in F major at 160 with crush"* | 8-bit |
+| *"phrygian techno at 138, minor feel"* | Modal techno |
+| *"jazz progression Cm7-Am7-Fmaj7-G7 with walking bass at 90"* | Modal jazz |
+
+### Iteration patterns (when something is already playing)
+
+The LLM **always sees the current pattern** in a `<current>` block, so
+iterations preserve whatever you don't ask to change.
+
+| You say | What changes | What stays |
+|---|---|---|
+| *"more reverb"* | `room(0.7-0.9)` on the most-prominent melodic layer | drums, kick, structure |
+| *"make it dubby"* | `delay` / `delaytime` / `delayfeedback` on a non-drum layer | tempo, kit, melody |
+| *"swap to RolandTR808"* | `.bank("RolandTR808")` on drum lines | melody, structure, tempo |
+| *"darker"* | LPF drops, room rises, soundfont swaps to a darker one | rhythm, harmony |
+| *"harder bass"* | `.s("sine").fmh(2).fmi(...)` swap (FM synth) | drums, melody |
+| *"vocal-y filter"* | `.vowel("<a e i o>")` added to lead/synth | drums, bass, harmony |
+| *"every 4 bars flip the hihats"* | `.every(4, rev)` on the hh layer | everything else |
+| *"quieter overall"* | Outer `.gain(0.6)` or per-layer gain reductions | structure |
+| *"more energetic"* | `.fast(2)` somewhere, optional `hh*16` layer added | core idea |
+| *"strip everything except drums and bass"* | The chord/pad/lead `stack` items removed | drums, bass |
+
+### Things the system will refuse politely
+
+The LLM is told not to invent — when a request can't be turned into a
+pattern, it returns a "Couldn't generate" sentinel and the editor stays
+unchanged. Triggers:
+
+- Off-topic ("write me a poem", "what's the weather")
+- Genre / instrument the skill doesn't know (very obscure regional styles)
+- Requests that would need code outside Strudel's verified API surface
+
+### Tips
+
+- **Voice is fastest** for short canned commands (`"more reverb"`, `"stop all"`).
+- **Typing is best** for precise tweaks the LLM might mis-interpret from
+  speech: *"raise lpf to 1200 on the bass layer"* is much safer typed.
+- **Chips are first** for discovery — click one, edit if you want, send.
+- **Multi-track sessions stay in beat** automatically (one global cycle
+  clock). Open a new track at any time without disturbing the others.
+
+The 10 chips above the textarea mirror the most-used prompts. The skill
+prompts driving the LLM live in `services/api/src/skills/strudel/` —
+add new genre templates or mutation recipes there and the LLM picks
+them up on the next request (no restart needed; skill files are re-read
+per `/generate` call).
 
 ---
 
