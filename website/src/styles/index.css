@@ -179,6 +179,28 @@
    only loss is when a model ignores that rule — and the per-track
    pianoroll painter (selectable from the per-track viz dropdown)
    covers that case anyway. */
+/* === LLM line-flash ===
+   Brief cyan wash + left edge accent on `.cm-line` nodes that changed
+   between the previous editor state and an LLM-applied snapshot. The
+   accent border distinguishes our flash from Strudel's per-event playback
+   highlights (which use inline mini-highlight decorations on a fully
+   different visual layer). Triggered from applyCodeToSelectedTrack via
+   flashChangedLines() — pure CSS animation so we don't have to coordinate
+   cleanup timing in JS. */
+@keyframes vr-line-flash-fade {
+  0% {
+    background-color: rgb(var(--vr-accent-cyan-rgb) / 0.55);
+    box-shadow: inset 3px 0 0 0 var(--vr-accent-cyan);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 3px 0 0 0 transparent;
+  }
+}
+.vr-line-flash {
+  animation: vr-line-flash-fade 1.2s ease-out;
+}
+
 canvas#test-canvas {
   display: none !important;
 }

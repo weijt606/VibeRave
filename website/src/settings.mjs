@@ -48,7 +48,11 @@ export const defaultSettings = {
   // scheduler through the global cyclist registry instead of spinning up
   // a per-track clock.
   isSyncEnabled: true,
-  isLineWrappingEnabled: false,
+  // Wrap long lines instead of overflowing horizontally. Default ON for
+  // VibeRave — patterns are often long method chains and a horizontal
+  // scrollbar interrupts the live-coding flow. Toggle off in Settings →
+  // "Enable line wrapping" if you prefer Strudel's stock behaviour.
+  isLineWrappingEnabled: true,
   isPatternHighlightingEnabled: true,
   isTabIndentationEnabled: false,
   isMultiCursorEnabled: false,

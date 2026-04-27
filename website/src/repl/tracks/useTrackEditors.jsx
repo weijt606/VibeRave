@@ -46,6 +46,13 @@ export function useTrackEditors() {
     Object.keys(defaultSettings).forEach((key) => {
       editorSettings[key] = _settings[key];
     });
+    // Hard-override line wrapping ON — same pattern as isSyncEnabled above.
+    // Long method-chain patterns are the norm in Strudel and a horizontal
+    // scrollbar interrupts the live-coding flow. We do this here (not by
+    // changing the default) so users with an existing localStorage that
+    // pinned isLineWrappingEnabled=false don't keep getting horizontal
+    // overflow after upgrade.
+    editorSettings.isLineWrappingEnabled = true;
     Object.values(editorsRef.current).forEach((ed) => ed?.updateSettings(editorSettings));
   }, [_settings]);
 

@@ -8,6 +8,7 @@ import {
   setTrackCode,
 } from '../../tracks/tracksStore.mjs';
 import { createVoiceRecorder } from './voice-recorder.mjs';
+import { flashChangedLines } from './vibe/flashChangedLines.mjs';
 import {
   displayKey,
   eventMatchesHotkey,
@@ -141,6 +142,9 @@ async function applyCodeToSelectedTrack(code, onError, { allowFix = false } = {}
   const previousCode = typeof editor.code === 'string' ? editor.code : '';
   setTrackCode(id, code);
   editor.setCode(code);
+  // Flash the lines the LLM actually touched so the user sees the diff
+  // immediately. editor.editor is the underlying CodeMirror EditorView.
+  flashChangedLines(editor.editor, previousCode, code);
   // Arm the runtime-error watcher *before* awaiting evaluate so we don't
   // miss errors emitted between the eval finishing and the next tick.
   const watcher = allowFix ? watchForRuntimeError() : null;
@@ -161,6 +165,7 @@ async function applyCodeToSelectedTrack(code, onError, { allowFix = false } = {}
     }
     setTrackCode(id, previousCode);
     editor.setCode(previousCode);
+    flashChangedLines(editor.editor, code, previousCode);
     try {
       await editor.evaluate(true);
       onError?.(`${reason} — reverted to previous pattern`);
