@@ -599,8 +599,9 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
                 <li>"make the bass more dubby"</li>
                 <li>"swap the drums for a 909 kit and double the tempo"</li>
               </ul>
-              <div className="mt-3 opacity-80">
-                Hold <kbd className="px-1 border border-white/30 rounded bg-black/40">{displayKey(pttKey)}</kbd> anywhere on the page to talk, release to send.
+              <div className="mt-3 opacity-80 leading-relaxed">
+                <div>Hold <kbd className="px-1 border border-white/30 rounded bg-black/40">{displayKey(pttKey)}</kbd> anywhere to talk, release to send.</div>
+                <div>Or type and press <kbd className="px-1 border border-white/30 rounded bg-black/40">Enter</kbd>, or click any chip below.</div>
               </div>
             </div>
           </div>

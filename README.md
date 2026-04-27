@@ -1,47 +1,51 @@
 <h1 align="center">VibeRave</h1>
 
 <p align="center">
-  <img src="docs/images/viberave-banner.png" alt="VibeRave — voice → music engine" width="100%" />
+  <img src="docs/images/viberave-banner.png" alt="VibeRave — multimodal music engine" width="100%" />
 </p>
 
 <p align="center">
-  <strong>Vibe-code rave music with your voice.</strong>
+  <strong>Vibe-code rave music — speak it, type it, or click it.</strong>
 </p>
 
 <p align="center">
-  Hold a key, speak a command — VibeRave hot-swaps the running pattern<br/>
-  in the <a href="https://strudel.cc">Strudel</a> editor without breaking the beat.
+  Multimodal live coding for <a href="https://strudel.cc">Strudel</a>: hold a key
+  to talk, hit Enter to type, or click a preset chip.<br/>
+  Same agent loop, same hot-swap — no broken beats.
 </p>
 
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
+  <a href="#input-modes">Input modes</a> ·
   <a href="#backend-matrix">Backends</a> ·
-  <a href="#voice-command-reference">Voice commands</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="LICENSE">License</a>
 </p>
 
 <br/>
 
-VibeRave is a fork of [Strudel](https://strudel.cc) that adds a voice-to-code
-agent loop. It is fully open source: every backend in the pipeline can be
-swapped between **local-only** (offline, free) and **cloud** (faster, more
-accurate) implementations — you can run the whole stack with no paid services.
+VibeRave is a fork of [Strudel](https://strudel.cc) that adds a multimodal
+agent loop on top — voice, text, and one-click chip presets are all
+first-class entry points to the same code-generation pipeline. It is fully
+open source: every backend can be swapped between **local-only** (offline,
+free) and **cloud** (faster, more accurate) — you can run the whole stack
+with no paid services.
 
 ```
        you (in your room or on stage)
-            │  "lo-fi beat at 80 bpm, more reverb, swap drums for a 909"
-            ▼
-   ┌────────────────────────────────────────────────────────────────┐
-   │  Voice → Music pipeline                                        │
-   │                                                                │
-   │   mic → STT  (whisper · vosk · any OpenAI-compat /audio API)   │
-   │       → LLM  (any OpenAI-compat chat API · or Ollama)          │
-   │       → Strudel code                                           │
-   │       → hot-swap into the in-browser scheduler                 │
-   └────────────────────────────────────────────────────────────────┘
-            │
-            ▼  the music keeps playing — your edit lands on the next cycle
+            ├─ 🎙  voice  →  STT (whisper · vosk · any OpenAI-compat /audio API)
+            │                       │
+            ├─ ⌨   typing  ─────────┤
+            │                       ▼
+            └─ 🔘  chip click  →  LLM (any OpenAI-compat chat API · or Ollama)
+                                     │
+                                     ▼
+                              Strudel code
+                                     │
+                                     ▼
+                       hot-swap into the in-browser scheduler
+
+            the music keeps playing — your edit lands on the next cycle
 ```
 
 <br/>
@@ -52,22 +56,29 @@ accurate) implementations — you can run the whole stack with no paid services.
 
 ## Features
 
-- **Hot-swap live coding** — voice commands edit the pattern that's
-  currently playing; the audio scheduler keeps the beat across the swap.
+- **Multimodal input** — voice (push-to-talk), text (typing), and one-click
+  chip presets are all first-class. Mix and match in the same session — voice
+  for fast generation, typing for precise edits, chips for the most-used
+  commands. All three feed into the same LLM agent loop.
+- **Hot-swap live coding** — every command edits the pattern that's currently
+  playing; the audio scheduler keeps the beat across the swap.
 - **Pluggable STT** — three speech-to-text backends, switchable per request:
   `whisper` (local), `vosk` (local, sub-15 ms on a closed grammar), or
-  `api` (any OpenAI-compatible `/audio/transcriptions` endpoint).
+  `api` (any OpenAI-compatible `/audio/transcriptions` endpoint, including
+  Qwen DashScope's native paraformer / fun-asr path).
 - **Pluggable LLM** — `api` (any OpenAI-compatible Chat Completions endpoint)
   or `ollama` (local, no API key, runs on your laptop). Configure both from
   the in-app **API Settings** panel — no `.env` editing required.
 - **Multi-track** — independent tracks with per-track visualizers
-  (pianoroll / waveform / spectrum / scope / spiral).
-- **Click-to-prompt chips** — 10 canonical commands (`lo-fi beat`,
-  `Berghain techno`, `add reverb`, `stop all`, …) above the input. Useful
-  when STT is flaky or for first-time visitors who don't know what to say.
-- **Per-take metrics + stage dumps** (optional) — every voice take can
-  be persisted as `raw.wav` + transcript + JSON metrics so you can
-  A/B different STT backends offline.
+  (pianoroll / waveform / spectrum / scope / spiral); all share one global
+  cycle clock so beats align.
+- **Command queue** — submit while a previous prompt is still generating;
+  prompts queue and fire in order. Drop one with × before its turn.
+- **Click-to-prompt chips** — 10 canonical commands above the input. Click
+  fills the textarea (does not auto-send), so you can edit before sending.
+- **Per-take metrics + stage dumps** (optional) — every voice take can be
+  persisted as `raw.wav` + transcript + JSON metrics so you can A/B
+  different STT backends offline.
 
 <br/>
 
@@ -81,16 +92,41 @@ accurate) implementations — you can run the whole stack with no paid services.
 
 <br/>
 
+## Input modes
+
+VibeRave is **dual-input by design**. Pick whichever feels right for the moment
+— or switch mid-session.
+
+| Mode | How | When to use |
+|---|---|---|
+| 🎙 **Voice (push-to-talk)** | Hold the configured PTT key (default <kbd>Space</kbd>) anywhere on the page, speak a command, release | Live performance, hands-on-controller flow, "make it dubby" while watching the dancefloor |
+| ⌨ **Text (typing)** | Type directly into the textarea, press <kbd>Enter</kbd> | Precise prompts ("Berghain techno at 132 bpm with sidechain on the bass"), debugging when STT mis-hears, quiet rooms |
+| 🔘 **Chip presets** | Click any of the 10 prompt chips above the textarea | First-run discoverability, sub-second canned commands during a demo, when you forget the exact phrase |
+
+All three feed the same backend pipeline. Voice goes through STT first; text
+and chips skip that hop entirely. **The LLM doesn't know or care which mode
+fired the prompt.**
+
+A common workflow is *voice for speed, text for precision*: start a track
+with "lo-fi beat at 80 bpm" by voice, then type a precise iteration like
+"raise lpf on the bass to 1200, add 1/4-dotted delay on the rhodes."
+
+<br/>
+
+---
+
+<br/>
+
 ## Quickstart
 
-> **Goal: from `git clone` to your first voice-driven track in under 5 minutes.**
+> **Goal: from `git clone` to your first track in under 5 minutes.**
 
 ### 0. Prerequisites
 
 | | Requirement |
 |---|---|
-| Runtime | **Node ≥ 20.6** &nbsp;·&nbsp; **pnpm ≥ 9** &nbsp;·&nbsp; Chrome / Edge / Firefox 118+ for `getUserMedia` |
-| Hardware | A microphone — a USB headset works great; built-in laptop mic is fine for testing |
+| Runtime | **Node ≥ 20.6** &nbsp;·&nbsp; **pnpm ≥ 9** &nbsp;·&nbsp; Chrome / Edge / Firefox 118+ |
+| Hardware | A microphone — only required if you want voice input. Text input works on any device |
 | Account (pick one) | An API key from any OpenAI-compatible provider (free tiers exist for Groq, OpenAI, OpenRouter, Qwen, Gemini), **or** [Ollama](https://ollama.com/) running locally with a model pulled |
 
 ### 1. Clone + install + start
@@ -120,12 +156,23 @@ You should see two URLs in the terminal:
 
 > Settings persist in your browser's localStorage. They never leave your machine except as headers on requests to your own backend, which forwards them to the chosen provider.
 
-### 3. Talk to it
+### 3. Drive it — voice, text, or chips
 
-1. Click the `+` at the top of the left column to create your first track.
-2. Hold **Space** anywhere on the page, say *"lo-fi beat at eighty BPM"*, release.
-3. The transcript appears in the textarea, auto-sends after 2 seconds, and the editor below fills with Strudel code that starts playing.
-4. Holding Space again, say *"more reverb"*. The new pattern hot-swaps on the next cycle.
+Click the `+` at the top of the left column to create your first track. Then
+pick whichever input mode feels right:
+
+**Voice** (push-to-talk):
+1. Hold **Space** anywhere on the page, say *"lo-fi beat at eighty BPM"*, release.
+2. The transcript appears in the textarea, auto-sends after ~2 seconds, the editor fills with Strudel code, the music starts playing.
+3. Hold Space again, say *"more reverb"*. The new pattern hot-swaps on the next cycle.
+
+**Text** (typing):
+1. Click in the textarea, type *"lo-fi beat at 80 bpm"*, press <kbd>Enter</kbd>.
+2. Same agent loop, just no STT hop. Lower latency, perfect recognition.
+
+**Chips** (one click):
+1. Click any chip above the textarea (`lo-fi beat`, `Berghain techno`, `add reverb`, …) — it fills the prompt.
+2. Edit if you want, then press <kbd>Enter</kbd> or click **Send**.
 
 If you'd rather click than talk, the chip row above the textarea has 10 canonical prompts (`lo-fi beat`, `Berghain techno`, `add reverb`, `stop all`, …) — click one to fill the input.
 
@@ -200,8 +247,10 @@ OpenAI-compatible mode, self-hosted whisper.cpp servers, and so on.
 services/api/                          Fastify backend (Node ≥ 20.6, ESM)
   src/
     application/                       Use cases — depend only on ports
-      transcribe-audio.mjs             voice → text (any STT backend)
-      generate-strudel.mjs             text → Strudel code (any LLM backend)
+      transcribe-audio.mjs             voice → text (any STT backend; only
+                                       hit when input mode is voice)
+      generate-strudel.mjs             text → Strudel code (any LLM backend;
+                                       hit by voice / text / chip alike)
       validate-strudel.mjs             syntactic guard pre-hot-swap
       transcript-normalizer.mjs        optional LLM cleanup of STT output
       chat-session.mjs                 persisted conversation per session
@@ -220,7 +269,8 @@ services/api/                          Fastify backend (Node ≥ 20.6, ESM)
 website/                               Astro / React Strudel REPL
   src/repl/
     components/panel/
-      VibeTab.jsx                      voice-driven prompt + chat UI
+      VibeTab.jsx                      multimodal prompt input (voice + text
+                                       + chips) + chat UI + command queue
       ApiSettingsTab.jsx               BYO key + base URL UI
     tracks/                            multi-track UI + per-track visualizers
 ```
@@ -233,9 +283,10 @@ backend is one new file in `infrastructure/` plus a branch in
 
 ---
 
-## Voice command reference
+## Command reference
 
-Common phrases the system handles well across all STT backends:
+Phrases the system handles well — works the same whether you speak them,
+type them, or click a chip:
 
 | Category | Examples |
 |---|---|
@@ -245,8 +296,9 @@ Common phrases the system handles well across all STT backends:
 | **Stems** | `more bass`, `bring back the lead`, `mute the pad` |
 | **Transport** | `play`, `pause`, `stop all`, `open a new track` |
 
-The 10 chips above the input box are also clickable as a deterministic
-fallback when speech recognition struggles.
+The 10 chips above the input mirror the most-used prompts. Voice is fastest
+for these short commands; typing is best for precise edits the LLM might
+mis-interpret from speech ("raise lpf to 1200 on the bass layer").
 
 ---
 

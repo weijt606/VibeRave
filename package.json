@@ -2,7 +2,7 @@
   "name": "@viberave/monorepo",
   "version": "0.5.0",
   "private": true,
-  "description": "VibeRave — vibe-code rave music with your voice. A fork of Strudel with a pluggable voice-to-code agent loop (whisper / vosk / gemini for STT, gemini / ollama for LLM).",
+  "description": "VibeRave — multimodal live coding for Strudel. Speak it, type it, or click a chip preset. Pluggable STT (whisper / vosk / OpenAI-compat / DashScope) and LLM (any OpenAI-compat endpoint or Ollama).",
   "scripts": {
     "setup": "pnpm i",
     "pretest": "npm run jsdoc-json",

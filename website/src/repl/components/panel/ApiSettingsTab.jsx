@@ -178,10 +178,11 @@ export function ApiSettingsTab() {
       <div className="space-y-1">
         <h2 className="text-base font-semibold">API Settings</h2>
         <p className="text-xs opacity-60 leading-relaxed max-w-prose">
-          Configure the language model and speech-to-text backends used by VibeRave.
-          Keys are stored in your browser only — never persisted on the server,
-          never shared. Leave any field blank to fall back to the server&apos;s
-          environment defaults.
+          Configure the LLM (used by every prompt — voice, text, or chip click)
+          and the speech-to-text backend (used only when you push-to-talk; text
+          input bypasses STT entirely). Keys are stored in your browser only —
+          never persisted on the server, never shared. Leave any field blank to
+          fall back to the server&apos;s environment defaults.
         </p>
       </div>
 

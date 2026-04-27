@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "VibeRave API — voice → Strudel code generation. Pluggable LLM (any OpenAI-compatible endpoint or Ollama) and STT (whisper / vosk local, or any OpenAI-compatible /audio/transcriptions endpoint).",
+  "description": "VibeRave API — multimodal (voice + text) input → Strudel code generation. Pluggable LLM (any OpenAI-compatible endpoint or Ollama) and STT (whisper / vosk local, or any OpenAI-compatible /audio/transcriptions endpoint, plus DashScope native).",
   "main": "src/index.mjs",
   "scripts": {
     "dev": "node --env-file=../../.env --watch src/index.mjs",

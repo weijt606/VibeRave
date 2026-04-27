@@ -11,8 +11,10 @@ strudel_packages:
 description: >
   Generate, explain, debug, iterate, and vary Strudel patterns. Strudel is a
   browser-based JavaScript port of TidalCycles using mini-notation strings and
-  chained pattern transforms. The user types one expression in a REPL; we return
-  one expression that the REPL can evaluate.
+  chained pattern transforms. The user submits a natural-language prompt
+  (via voice, typed text, or a one-click chip preset — all routed through
+  the same path) and we return one Strudel expression that the REPL can
+  evaluate.
 sources:
   - packages/core/**/*.mjs (JSDoc, 459 documented members)
   - packages/{webaudio,draw,codemirror,tonal,xen,edo,midi,motion}/**

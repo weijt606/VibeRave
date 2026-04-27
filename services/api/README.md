@@ -1,11 +1,15 @@
 # @viberave/api
 
-Fastify backend that turns voice into Strudel code. Pluggable STT
-(`whisper` / `vosk` / `api`) and LLM (`api` / `ollama`) backends. The
-`api` providers can target any OpenAI-compatible endpoint — settings
-travel as per-request override headers from the in-app **API Settings**
-panel, no `.env` editing required for end-users. See the
-[root README](../../README.md) for the project overview.
+Fastify backend that turns user prompts (voice OR text) into Strudel
+code. The voice path goes through STT first; text bypasses it and
+hits the LLM directly. The LLM is unaware of which input mode fired —
+both produce the same code-gen request shape.
+
+Pluggable STT (`whisper` / `vosk` / `api`) and LLM (`api` / `ollama`)
+backends. The `api` providers can target any OpenAI-compatible endpoint
+— settings travel as per-request override headers from the in-app
+**API Settings** panel, no `.env` editing required for end-users. See
+the [root README](../../README.md) for the project overview.
 
 ## Local model setup
 
