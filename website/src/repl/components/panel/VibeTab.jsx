@@ -738,13 +738,29 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
                 if (recorderRef.current && pttActiveRef.current) stopRecording();
               }}
               className={cx(
-                'px-3 py-1 rounded-md border text-sm flex items-center gap-2 select-none cursor-pointer touch-none',
+                'px-3 py-1 rounded-md border text-sm flex items-center gap-2 select-none cursor-pointer touch-none transition-shadow duration-75',
                 listening
-                  ? 'border-foreground bg-foreground text-background'
+                  ? 'border-[var(--vr-accent-cyan)] bg-foreground text-background'
                   : transcribing
-                    ? 'border-foreground text-foreground opacity-70'
-                    : 'border-muted text-foreground hover:border-foreground/60',
+                    ? 'border-[var(--vr-accent-magenta)] text-foreground opacity-70'
+                    : 'border-muted text-foreground hover:border-[rgb(var(--vr-accent-cyan-rgb)/0.6)]',
               )}
+              style={
+                listening
+                  ? {
+                      // RMS → glow size. Speech RMS typically peaks around
+                      // 0.05–0.15; keep a 6px floor so the button still looks
+                      // "armed" during silence pauses, cap at 28px so loud
+                      // peaks don't bloom across the whole row.
+                      boxShadow: `0 0 ${Math.min(
+                        28,
+                        6 + (waveform[waveform.length - 1] || 0) * 180,
+                      )}px var(--vr-accent-cyan)`,
+                    }
+                  : transcribing
+                    ? { boxShadow: '0 0 8px rgb(var(--vr-accent-magenta-rgb) / 0.4)' }
+                    : undefined
+              }
             >
               {listening ? (
                 <>

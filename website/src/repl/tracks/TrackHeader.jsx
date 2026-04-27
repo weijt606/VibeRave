@@ -74,9 +74,9 @@ export function TrackHeader({
         className={cx(
           'shrink-0 w-1.5 h-1.5 rounded-full',
           isPlaying
-            ? 'bg-cyan-400 animate-pulse shadow-[0_0_6px_#22d3ee]'
+            ? 'bg-[var(--vr-accent-cyan)] animate-pulse shadow-[0_0_6px_var(--vr-accent-cyan)]'
             : pending
-              ? 'bg-pink-500 animate-pulse shadow-[0_0_5px_#ec4899]'
+              ? 'bg-[var(--vr-accent-magenta)] animate-pulse shadow-[0_0_5px_var(--vr-accent-magenta)]'
               : isSelected
                 ? 'bg-black/40'
                 : 'bg-muted',

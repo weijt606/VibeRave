@@ -67,6 +67,16 @@
 :root {
   --app-height: 100vh;
   --app-width: 100vw;
+  /* VibeRave brand accents. Hard-coded magenta/cyan that match the README
+     badges and the .vr-logo chromatic-aberration effect — these are the
+     project's visual identity. Pulled into custom properties so a future
+     theme override (or a "tone it down" toggle) can swap them in one place
+     instead of grep-replacing across components. The `*-rgb` form is the
+     space-separated channel triple, used inside `rgb(... / <alpha>)`. */
+  --vr-accent-cyan: #22d3ee;
+  --vr-accent-cyan-rgb: 34 211 238;
+  --vr-accent-magenta: #ec4899;
+  --vr-accent-magenta-rgb: 236 72 153;
 }
 
 #console-tab {
