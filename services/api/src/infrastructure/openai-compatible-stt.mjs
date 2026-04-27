@@ -3,6 +3,23 @@ import wavefile from 'wavefile';
 
 const { WaveFile } = wavefile;
 
+// Domain-context prompt fed to OpenAI Whisper / Groq Whisper / any other
+// /audio/transcriptions backend that supports the `prompt` parameter. This
+// is the same biasing trick our local whisper-transcriber uses: the
+// decoder treats the prompt as recent context, so words appearing here
+// are picked over phonetic neighbours. Critical for proper nouns
+// (Berghain, Aphex Twin) and DJ jargon (lo-fi, dub, breakbeat) that the
+// model is more likely to hallucinate as common English otherwise.
+//
+// Whisper's prompt window is 224 tokens — keep this comfortably under.
+const STT_BIAS_PROMPT =
+  'Voice commands for live-coding rave music: techno, house, deep house, ' +
+  'lo-fi, dub, dubby, drum and bass, ambient, acid, trance, breakbeat, ' +
+  'IDM, hyperpop, trap. Berghain (Berlin techno club). Drum machines: ' +
+  'TR-909, TR-808, LinnDrum, MPC60. Synths: sawtooth, square, sine, ' +
+  'Rhodes piano, sub bass, acid bass, lead, pad, arp. Effects: reverb, ' +
+  'delay, echo, sidechain, distortion. BPM tempos.';
+
 /**
  * Generic OpenAI-compatible STT client (the /audio/transcriptions endpoint).
  * Works with anything that speaks that protocol:
@@ -59,6 +76,10 @@ export function createOpenAICompatibleStt({ apiKey, baseURL, model, language = '
           file,
           model,
           ...(lang && lang !== 'auto' ? { language: lang } : {}),
+          // Domain biasing — see STT_BIAS_PROMPT comment at the top of
+          // this file. Providers that ignore the field (a few Whisper-API
+          // clones do) silently drop it; nothing breaks.
+          prompt: STT_BIAS_PROMPT,
           response_format: 'json',
         });
       } catch (err) {

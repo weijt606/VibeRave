@@ -63,6 +63,28 @@ export function createDashScopeStt({ apiKey, baseURL, model, language = 'auto' }
       // DashScope multimodal-generation accepts inline audio as a base64
       // data URI. paraformer-v2 / fun-asr / qwen-audio-asr all share the
       // same request shape; the model field selects which one decodes.
+      // Domain bias: tell the model what speech to expect. paraformer /
+      // qwen-audio-asr / fun-asr all benefit from this context — proper
+      // nouns like "Berghain" and DJ jargon ("lo-fi", "dub", "breakbeat")
+      // get recognised much more reliably than they would in a generic
+      // "transcribe whatever" frame.
+      const langLine =
+        lang && lang !== 'auto' ? `Expected language: ${lang}.` : '';
+      const promptText = [
+        'Transcribe the speech verbatim.',
+        langLine,
+        'The speaker is a DJ giving live-coding music commands —',
+        'expect terms like: Berghain, lo-fi, dub, dubby, breakbeat,',
+        'drum and bass, acid bass, sub bass, TR-909, TR-808, LinnDrum,',
+        'Rhodes piano, sidechain, BPM, hi-hat. If the audio contains',
+        'no recognisable speech, return an empty string — DO NOT make',
+        'up a sentence.',
+        'Return only the transcript text — no commentary, no time stamps,',
+        'no language tags.',
+      ]
+        .filter(Boolean)
+        .join(' ');
+
       const dataUri = `data:audio/wav;base64,${wav.toString('base64')}`;
       const body = {
         model,
@@ -70,15 +92,7 @@ export function createDashScopeStt({ apiKey, baseURL, model, language = 'auto' }
           messages: [
             {
               role: 'user',
-              content: [
-                { audio: dataUri },
-                {
-                  text:
-                    lang && lang !== 'auto'
-                      ? `Transcribe the speech verbatim. Expected language: ${lang}. Return only the transcript text — no commentary, no time stamps.`
-                      : 'Transcribe the speech verbatim. Return only the transcript text — no commentary, no time stamps.',
-                },
-              ],
+              content: [{ audio: dataUri }, { text: promptText }],
             },
           ],
         },

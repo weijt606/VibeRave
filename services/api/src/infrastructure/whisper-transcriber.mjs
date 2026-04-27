@@ -104,14 +104,21 @@ const POST_PROCESS_FIXES = [
 
 // Whisper's medium.en model carries a handful of training-data fillers that
 // it emits whenever it can't ground on real speech — typically when the
-// audio is silent / very short / low-SNR / over-suppressed by the enhancer.
-// These show up as confident-looking sentences that have nothing to do with
-// what was said. Rewriting them to '' lets the empty-text guard upstream
-// short-circuit the LLM call and surface "didn't catch that" instead of
-// generating a track from a YouTube outro.
+// audio is silent / very short / low-SNR. These show up as confident-looking
+// sentences that have nothing to do with what was said. Rewriting them to
+// '' lets the empty-text guard upstream short-circuit the LLM call and
+// surface "didn't catch that" instead of generating a track from a
+// YouTube outro.
 //
 // The list is anchored to the EXACT decoded text (after trim + lowercase)
 // because a substring match could eat real input ("you" / "thanks").
+//
+// Things INTENTIONALLY not in this list:
+//   - bare "okay." / "bye." — these are real one-word commands a DJ might
+//     say (confirmation / end-of-set). The voicedRatio < 0.10 gate in
+//     transcribe-audio.mjs catches the silence-fed case better than
+//     blanket-rejecting the word.
+//   - bare "you" — same reason; voicedRatio gate handles silence.
 const HALLUCINATION_PHRASES = new Set([
   'thanks for watching.',
   'thanks for watching',
@@ -119,6 +126,7 @@ const HALLUCINATION_PHRASES = new Set([
   'thank you.',
   'thank you',
   'thank you for watching.',
+  'thank you for watching!',
   'music playing in the background.',
   'music playing in the background',
   'music playing.',
@@ -127,11 +135,9 @@ const HALLUCINATION_PHRASES = new Set([
   'beck with us, thank you for your time.',
   'back with us, thank you for your time.',
   '1000 tracks.',
-  'you',
-  'you.',
   '.',
-  'bye.',
-  'okay.',
+  '...',
+  '. .',
 ]);
 function isHallucination(text) {
   return HALLUCINATION_PHRASES.has(String(text || '').trim().toLowerCase());

@@ -53,9 +53,10 @@ export function makeTranscriptNormalizer({ llmClient }) {
           userMessage: trimmed,
           history: [],
           // Force deterministic decoding for transcript fixing — the global
-          // GEMINI_TEMPERATURE (0.85) is tuned for code-gen diversity and
-          // makes this step fabricate ("Elite phase" → "Aliased phase",
-          // "Ben Thede" → "Ben Benda"). Cleanup wants the most-likely token.
+          // LLM_TEMPERATURE (0.85) is tuned for code-gen diversity and at
+          // that setting this step fabricates ("Elite phase" → "Aliased
+          // phase", "Ben Thede" → "Ben Benda"). Cleanup wants the
+          // most-likely token, so override per-call to 0.
           temperature: 0,
         });
         let cleaned = String(result.text ?? '').trim();

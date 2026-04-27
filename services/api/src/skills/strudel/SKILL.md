@@ -53,8 +53,8 @@ needs (e.g. drop `examples/` for a smaller prompt).
 When composing a system prompt, concatenate in this order so later files
 specialise earlier ones:
 
-1. `rules/output-format.md` — non-negotiable output contract (incl. mandatory
-   visualizer + compilation self-check)
+1. `rules/output-format.md` — non-negotiable output contract (one expression,
+   no viz hint, compilation self-check)
 2. `rules/iteration.md` — iteration / `<current>` semantics
 3. `rules/host-controls.md` — host signals: `loop_count`, `time_limit`,
    `continue_style`
@@ -75,9 +75,10 @@ specialise earlier ones:
 18. `examples/techniques.md`
 
 The minimum viable system prompt is **rules + reference/sounds +
-reference/mini-notation + reference/pattern-transforms +
-reference/visualization + examples/genres**. (Visualization moved into the
-minimum set because it is now mandatory per `rules/output-format.md`.)
+reference/mini-notation + reference/pattern-transforms + examples/genres**.
+`reference/visualization.md` is loaded too — but only to keep the model
+from emitting `.scope()` / `.pianoroll()` (it documents the "do NOT emit
+these" rule, not user-facing functions).
 
 ## Out of scope
 
