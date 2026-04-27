@@ -74,9 +74,9 @@ export function TrackHeader({
         className={cx(
           'shrink-0 w-1.5 h-1.5 rounded-full',
           isPlaying
-            ? 'bg-green-500 animate-pulse'
+            ? 'bg-cyan-400 animate-pulse shadow-[0_0_6px_#22d3ee]'
             : pending
-              ? 'bg-yellow-500'
+              ? 'bg-pink-500 animate-pulse shadow-[0_0_5px_#ec4899]'
               : isSelected
                 ? 'bg-black/40'
                 : 'bg-muted',
