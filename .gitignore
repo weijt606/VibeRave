@@ -55,14 +55,16 @@ src-tauri/target
 
 
 ### BEGIN Visual Studio Code ###
-# Blanket, recursive exclude for .vscode directory and files
-.vscode/**/*
-# Unexclude specific files and directories within .vscode
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# Blanket exclude — VibeRave doesn't ship editor-specific config
+# (the legacy .vscode/settings.json carried a Strudel-maintainer's
+# hard-coded local path; useless to forks).
+.vscode/
 ### END Visual Studio Code ###
+
+# Tauri desktop wrapper was removed from the open-source release — see
+# README "Tauri" question. If a contributor regenerates it via
+# `pnpm tauri init`, that's deliberate and they can `git add -f` it.
+src-tauri/
 
 
 
