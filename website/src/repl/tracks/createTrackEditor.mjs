@@ -16,7 +16,12 @@ import {
 } from './strudelGlobalInit.mjs';
 import { setTrackCode } from './tracksStore.mjs';
 import { makeTrackOutput } from './trackVolume.mjs';
-import { getPainter, DEFAULT_VIZ } from './painters.mjs';
+import {
+  getPainter,
+  DEFAULT_VIZ,
+  drawCyclePlayhead,
+  SKIP_PLAYHEAD,
+} from './painters.mjs';
 
 // Build a StrudelMirror bound to a single track. Each editor runs its own
 // scheduler so multiple tracks can play in parallel — we pass solo:false to
@@ -63,9 +68,19 @@ export function createTrackEditor({
     if (!ctx) return;
     const c = ctx.canvas;
     ctx.clearRect(0, 0, c.width, c.height);
+    const vizKey = vizRef.current;
     try {
-      getPainter(vizRef.current)(ctx, time, haps, drawTime, painterOpts);
+      getPainter(vizKey)(ctx, time, haps, drawTime, painterOpts);
     } catch {}
+    // Per-track cycle playhead overlay (option A). Skipped for painters
+    // that already convey cycle position (pianoroll) or have no
+    // horizontal time axis (spiral). Practically free — reuses the
+    // existing onDraw RAF and adds one line draw.
+    if (!SKIP_PLAYHEAD.has(vizKey)) {
+      try {
+        drawCyclePlayhead(ctx, time);
+      } catch {}
+    }
     painters?.forEach?.((painter) => {
       try {
         painter(ctx, time, haps, drawTime);

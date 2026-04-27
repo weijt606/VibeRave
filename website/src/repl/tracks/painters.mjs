@@ -19,27 +19,105 @@ function getDrawOptions(drawTime, options = {}) {
   return { ...options, cycles, playhead };
 }
 
-// Pianoroll with proper midi spacing — autorange so the bars fill the
-// canvas vertically (default minMidi=10..maxMidi=90 makes 80 slots, which
-// flattens to ~1px-tall notes on an 80px canvas). Solid fill, dim inactive
-// vs bright active so you can read the playhead at a glance.
-const pianoroll = (ctx, time, haps, drawTime) =>
-  __pianoroll({
+// Pianoroll using Strudel's stock __pianoroll. Default fold=1 wraps notes
+// into the unique-pitch set, fillActive=false + strokeActive=true gives
+// the classic "block lights up as the playhead crosses it" feel. Known
+// limitation: a pattern with only ONE unique pitch (e.g. `s("bd*4")`)
+// collapses to a single full-canvas-height stripe — Strudel's algorithm
+// allocates `canvas_height / unique_count` per bin. For drum-only loops
+// without pitch variation, prefer the Scope or Waveform viz instead.
+// Per-canvas hap buffer. Strudel's @strudel/draw `Drawer` is supposed to
+// accumulate haps into a sliding 4-cycle window (visibleHaps) and pass
+// the full buffer to onDraw, but in our multi-track setup the array
+// arriving at our painter is always just the single currently-active
+// hap. Without context (past + future haps) `__pianoroll` collapses to
+// a single full-canvas-height stripe of the current note.
+//
+// Workaround: accumulate haps ourselves, keyed by canvas (one buffer
+// per track). On each tick we add the haps coming in, prune anything
+// outside the [time-2, time+2] window, then hand the union to
+// __pianoroll. Buffer entries are deduped by `whole.begin + value` so
+// the same hap arriving on consecutive frames doesn't double up.
+const __pianorollBuffer = new WeakMap(); // canvas → Map<key, hap>
+const PIANO_KEEP_BEHIND = 2; // cycles to keep in the past
+const PIANO_KEEP_AHEAD = 2; // cycles to keep ahead
+
+function __hapKey(h) {
+  const begin = h.whole?.begin?.valueOf?.() ?? h.whole?.begin ?? '?';
+  const v = h.value;
+  let valKey;
+  if (typeof v === 'object' && v !== null) {
+    valKey = (v.note ?? v.n ?? v.freq ?? v.s ?? 'unknown') + '';
+  } else {
+    valKey = '' + v;
+  }
+  return begin + '|' + valKey;
+}
+
+const pianoroll = (ctx, time, haps, drawTime) => {
+  const canvas = ctx.canvas;
+  let buffer = __pianorollBuffer.get(canvas);
+  if (!buffer) {
+    buffer = new Map();
+    __pianorollBuffer.set(canvas, buffer);
+  }
+
+  // Add incoming haps (Drawer only sends the current onset most frames,
+  // but it adds up over time).
+  for (const h of haps || []) {
+    if (!h?.whole) continue;
+    buffer.set(__hapKey(h), h);
+  }
+
+  // Prune out-of-window haps so the buffer doesn't grow unbounded as
+  // the loop plays for minutes. Use the same window __pianoroll renders.
+  const minTime = time - PIANO_KEEP_BEHIND;
+  const maxTime = time + PIANO_KEEP_AHEAD;
+  for (const [k, h] of buffer) {
+    const begin = h.whole?.begin?.valueOf?.() ?? 0;
+    const end =
+      h.endClipped?.valueOf?.() ??
+      h.whole?.end?.valueOf?.() ??
+      begin;
+    if (end < minTime || begin > maxTime) buffer.delete(k);
+  }
+
+  // Strudel patterns with `.add(perlin.range(...))` or `.superimpose(...)`
+  // produce floating-point note values (e.g. 47.83 instead of a clean 48
+  // for c3) — different on every cycle. __pianoroll treats every unique
+  // float as its own pitch row, so a busy detuned pattern fans out into
+  // hundreds of sub-pixel-tall lanes that read as horizontal lines.
+  // Quantise to nearest semitone for the visualiser only — clones each
+  // hap (preserving prototype + getters like .endClipped, .hasOnset) so
+  // we never mutate the audio-side data.
+  const buffered = [...buffer.values()];
+  const renderHaps = buffered.map((h) => {
+    const v = h?.value;
+    if (
+      !v ||
+      typeof v !== 'object' ||
+      typeof v.note !== 'number' ||
+      Number.isInteger(v.note)
+    ) {
+      return h;
+    }
+    const clone = Object.create(Object.getPrototypeOf(h));
+    Object.assign(clone, h);
+    clone.value = { ...v, note: Math.round(v.note) };
+    return clone;
+  });
+
+  return __pianoroll({
     ctx,
     time,
-    haps,
+    haps: renderHaps,
     ...getDrawOptions(drawTime, {
-      fold: 0,
-      autorange: 1,
-      fill: 1,
-      fillActive: 1,
-      stroke: 0,
-      strokeActive: 0,
-      inactive: 'rgba(180,210,255,0.45)',
+      inactive: 'rgba(180,210,255,0.85)',
       active: '#ffffff',
       playheadColor: 'rgba(255,255,255,0.6)',
     }),
   });
+};
 
 const spiral = (ctx, time, haps, drawTime) =>
   drawSpiral({ ctx, time, haps, drawTime });
@@ -290,6 +368,32 @@ export function disposeAnalyzerArtifacts(analyzerId) {
   spectrogramFrames.delete(analyzerId);
   waveformHistory.delete(analyzerId);
   delete analysers[analyzerId];
+}
+
+// 1-pixel vertical hairline showing the current cycle position (0..1
+// fraction of canvas width). Drawn AFTER the painter so it sits on top
+// of the audio viz. Brand cyan at low alpha — visible against any
+// painter without dominating. Two skips:
+//  - pianoroll already draws its own playhead (would overlap)
+//  - spiral is radial, has no horizontal time axis to anchor on
+// On scope/chromatic the canvas isn't a literal cycle timeline (it's a
+// 23ms scope snapshot), but the line still reads as a useful "where in
+// the loop are we" reference and helps the user time hot-swaps.
+const PLAYHEAD_COLOR = 'rgba(34, 211, 238, 0.45)'; // sync with --vr-accent-cyan
+export const SKIP_PLAYHEAD = new Set(['pianoroll', 'spiral']);
+export function drawCyclePlayhead(ctx, time) {
+  if (typeof time !== 'number' || !Number.isFinite(time)) return;
+  const { canvas } = ctx;
+  const cyclePos = ((time % 1) + 1) % 1;
+  const x = Math.round(cyclePos * canvas.width) + 0.5; // crisp 1px on integer pixel
+  ctx.save();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = PLAYHEAD_COLOR;
+  ctx.beginPath();
+  ctx.moveTo(x, 0);
+  ctx.lineTo(x, canvas.height);
+  ctx.stroke();
+  ctx.restore();
 }
 
 // `shape` tells the host how to size the canvas:
