@@ -201,6 +201,7 @@ function MainSettingsContent({ started }) {
     vibePttKey,
     vibeAutoApply,
     vibeVoiceLang,
+    isCycleBarDisplayed,
   } = useSettings();
   const shouldAlwaysSync = isUdels();
   const canChangeAudioDevice = AudioContext.prototype.setSinkId != null;
@@ -316,6 +317,11 @@ function MainSettingsContent({ started }) {
             items={{ 'en-US': 'English', 'zh-CN': '中文', auto: 'Browser' }}
           />
         </div>
+        <Checkbox
+          label="Show cycle indicator bar (top of panel)"
+          onChange={(cbEvent) => settingsMap.setKey('isCycleBarDisplayed', cbEvent.target.checked)}
+          value={isCycleBarDisplayed}
+        />
       </FormItem>
       <FormItem label="More Settings">
         <Checkbox

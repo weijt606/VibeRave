@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '@nanostores/react';
 import { getTime } from '@strudel/core';
+import { useSettings } from '../../../settings.mjs';
 import { $anyPlaying } from '../../tracks/tracksStore.mjs';
 
 // 2-pixel horizontal indicator at the top of the panel content. The fill
@@ -14,10 +15,18 @@ import { $anyPlaying } from '../../tracks/tracksStore.mjs';
 // when the user pauses everything; otherwise `getTime()` would keep
 // advancing because scheduler.now() reads real time.
 export function CycleBar() {
+  const { isCycleBarDisplayed } = useSettings();
   const anyPlaying = useStore($anyPlaying);
   const fillRef = useRef(null);
 
+  // IMPORTANT: this hook MUST run before any conditional return — React's
+  // rules of hooks require a stable hook count across renders. An early
+  // `if (!isCycleBarDisplayed) return null` placed above this useEffect
+  // would change the hook count when the toggle flips, throwing
+  // "Rendered fewer hooks than expected" and unmounting the whole tree
+  // (black screen). The toggle is read inside the effect body instead.
   useEffect(() => {
+    if (!isCycleBarDisplayed) return;
     const fill = fillRef.current;
     if (!fill) return;
     if (!anyPlaying) {
@@ -41,17 +50,23 @@ export function CycleBar() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [anyPlaying]);
+  }, [anyPlaying, isCycleBarDisplayed]);
+
+  if (!isCycleBarDisplayed) return null;
 
   return (
-    <div className="relative w-full h-[2px] overflow-hidden pointer-events-none">
+    <div className="relative w-full h-[1px] overflow-hidden pointer-events-none">
       <div
         ref={fillRef}
         className="absolute top-0 left-0 h-full"
         style={{
           width: '0%',
+          // Brand colours at 50% alpha + 1px height — a peripheral pacing
+          // cue, not a primary visual element. The 50% sweet spot was
+          // dialled in by hand: 0.35 disappeared on lighter themes, full
+          // saturation pulled the eye away from the track content.
           background:
-            'linear-gradient(90deg, var(--vr-accent-magenta), var(--vr-accent-cyan))',
+            'linear-gradient(90deg, rgb(var(--vr-accent-magenta-rgb) / 0.5), rgb(var(--vr-accent-cyan-rgb) / 0.5))',
         }}
       />
     </div>

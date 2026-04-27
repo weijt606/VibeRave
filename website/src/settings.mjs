@@ -76,6 +76,10 @@ export const defaultSettings = {
   settingsTab: 'settings',
   vibePttKey: 'Space',
   vibeAutoApply: true,
+  // Top-of-panel cycle indicator bar (1px gradient that scans left→right
+  // once per Strudel cycle). On by default — peripheral pacing cue. Toggle
+  // off if it feels too busy.
+  isCycleBarDisplayed: true,
   // Speech recognition language hint sent to the backend on /transcribe.
   // 'auto' uses navigator.language — but on Chinese-locale browsers that's
   // zh-CN, which butchers English prompts via the wrong phonetic model.
@@ -282,6 +286,10 @@ export const $settings = computed(settingsMap, (state) => {
     includePrebakeScriptInShare: parseBoolean(state.includePrebakeScriptInShare),
     vibeAutoApply: state.vibeAutoApply === undefined ? true : parseBoolean(state.vibeAutoApply),
     vibeBilingual: parseBoolean(state.vibeBilingual),
+    isCycleBarDisplayed:
+      state.isCycleBarDisplayed === undefined
+        ? true
+        : parseBoolean(state.isCycleBarDisplayed),
     patternAutoStart: isUdels()
       ? false
       : state.patternAutoStart === undefined
