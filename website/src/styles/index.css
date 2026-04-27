@@ -77,6 +77,14 @@
   --vr-accent-cyan-rgb: 34 211 238;
   --vr-accent-magenta: #ec4899;
   --vr-accent-magenta-rgb: 236 72 153;
+  /* "Deep" / dark variants of the brand accents — same hue family, lower
+     saturation/lightness. For UI elements that should read as branded
+     but quieter than the neon primary tone (level meters, secondary
+     accents). Approx. cyan-700 / pink-700 in Tailwind. */
+  --vr-accent-cyan-deep: #0e7490;
+  --vr-accent-cyan-deep-rgb: 14 116 144;
+  --vr-accent-magenta-deep: #be185d;
+  --vr-accent-magenta-deep-rgb: 190 24 93;
 }
 
 #console-tab {

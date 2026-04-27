@@ -27,6 +27,7 @@ export function TrackCard({
   return (
     <div className="flex flex-col">
       <TrackHeader
+        trackId={track.id}
         name={track.name}
         isSelected={isSelected}
         isPlaying={!!state?.started}

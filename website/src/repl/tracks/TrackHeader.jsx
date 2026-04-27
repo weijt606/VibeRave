@@ -1,8 +1,76 @@
 import { useEffect, useRef, useState } from 'react';
 import { PlayIcon, StopIcon, TrashIcon, BoltIcon } from '@heroicons/react/16/solid';
+import { analysers } from '@strudel/webaudio';
 import cx from '@src/cx.mjs';
 
+// Tiny RMS level meter pinned to the track header. Reads from the
+// per-track AnalyserNode that trackVolume.mjs registers under
+// `track-${trackId}` whenever a hap with `analyze: <id>` plays. While
+// idle (track stopped, or never played a hap with that analyze tag),
+// the meter sits at 0% width — no canvas, no DOM thrash.
+//
+// We update via requestAnimationFrame and write directly to inline
+// `style.width` so React stays out of the per-frame loop. CSS
+// `transition: width` smooths the ~50ms RAF jitter into a fluid bar
+// without us having to maintain a peak-decay state machine.
+function TrackLevelMeter({ analyzerId, isPlaying }) {
+  const fillRef = useRef(null);
+
+  useEffect(() => {
+    const fill = fillRef.current;
+    if (!fill) return;
+    if (!isPlaying || !analyzerId) {
+      fill.style.width = '0%';
+      return;
+    }
+    let raf = 0;
+    let buf = null;
+    const tick = () => {
+      const an = analysers[analyzerId];
+      if (an && fill) {
+        if (!buf || buf.length !== an.fftSize) buf = new Float32Array(an.fftSize);
+        an.getFloatTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+        const rms = Math.sqrt(sum / buf.length);
+        // RMS → width. Music sits around 0.05–0.25 RMS; ×260 gives
+        // a comfortable mapping where a normal mix peaks ~80% and only
+        // very loud transients hit 100%. Clamped so a clip can't
+        // stretch the bar beyond its container.
+        const pct = Math.min(100, rms * 260);
+        fill.style.width = `${pct}%`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isPlaying, analyzerId]);
+
+  return (
+    <div
+      className="shrink-0 w-[60px] h-[4px] rounded overflow-hidden bg-foreground/10"
+      aria-hidden
+    >
+      <div
+        ref={fillRef}
+        className="h-full"
+        style={{
+          width: '0%',
+          // Use the *deep* variant of the brand cyan (≈ cyan-700) at full
+          // alpha. The neon cyan-400 was correct hue but too bright for a
+          // small, peripheral element — translucent neon still reads as
+          // "look at me!" The deep tone keeps the brand identity but sits
+          // back in the visual hierarchy.
+          backgroundColor: 'var(--vr-accent-cyan-deep)',
+          transition: 'width 0.05s linear',
+        }}
+      />
+    </div>
+  );
+}
+
 export function TrackHeader({
+  trackId,
   name,
   isSelected,
   isPlaying,
@@ -119,6 +187,11 @@ export function TrackHeader({
           )}
         </div>
       )}
+
+      <TrackLevelMeter
+        analyzerId={trackId ? `track-${trackId}` : null}
+        isPlaying={isPlaying}
+      />
 
       <button
         onClick={(e) => {
