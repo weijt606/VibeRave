@@ -12,13 +12,29 @@ const { WaveFile } = wavefile;
 // model is more likely to hallucinate as common English otherwise.
 //
 // Whisper's prompt window is 224 tokens — keep this comfortably under.
-const STT_BIAS_PROMPT =
+const STT_BIAS_PROMPT_EN =
   'Voice commands for live-coding rave music: techno, house, deep house, ' +
   'lo-fi, dub, dubby, drum and bass, ambient, acid, trance, breakbeat, ' +
   'IDM, hyperpop, trap. Berghain (Berlin techno club). Drum machines: ' +
   'TR-909, TR-808, LinnDrum, MPC60. Synths: sawtooth, square, sine, ' +
   'Rhodes piano, sub bass, acid bass, lead, pad, arp. Effects: reverb, ' +
   'delay, echo, sidechain, distortion. BPM tempos.';
+
+// Bilingual variant — keeps the full English anchor (Berghain, TR-909,
+// etc. are proper nouns that don't translate) and appends a compact
+// Chinese DJ vocabulary. Picked when the frontend signals bilingual mode
+// or auto-detect via the language hint.
+const STT_BIAS_PROMPT_BILINGUAL =
+  STT_BIAS_PROMPT_EN +
+  ' 中文DJ术语：柏林Berghain、低保真lo-fi、深house、techno、' +
+  '鼓机、踢鼓、军鼓、镲片、贝斯、合成器、混响、延迟、滤波器、加速、停止。';
+
+function pickBiasPrompt(lang) {
+  const norm = String(lang || '').toLowerCase();
+  if (!norm || norm === 'auto') return STT_BIAS_PROMPT_BILINGUAL;
+  if (norm.startsWith('en')) return STT_BIAS_PROMPT_EN;
+  return STT_BIAS_PROMPT_BILINGUAL;
+}
 
 /**
  * Generic OpenAI-compatible STT client (the /audio/transcriptions endpoint).
@@ -76,10 +92,10 @@ export function createOpenAICompatibleStt({ apiKey, baseURL, model, language = '
           file,
           model,
           ...(lang && lang !== 'auto' ? { language: lang } : {}),
-          // Domain biasing — see STT_BIAS_PROMPT comment at the top of
+          // Domain biasing — see STT_BIAS_PROMPT_* comments at the top of
           // this file. Providers that ignore the field (a few Whisper-API
           // clones do) silently drop it; nothing breaks.
-          prompt: STT_BIAS_PROMPT,
+          prompt: pickBiasPrompt(lang),
           response_format: 'json',
         });
       } catch (err) {

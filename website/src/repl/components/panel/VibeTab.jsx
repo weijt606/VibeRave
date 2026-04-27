@@ -194,6 +194,7 @@ export function VibeTab() {
     vibePttKey: pttKey,
     vibeAutoApply: auto,
     vibeVoiceLang,
+    vibeBilingual,
   } = useSettings();
   const selectedTrackId = useStore($selectedTrackId);
   const selectedTrack = useStore($selectedTrack);
@@ -208,6 +209,11 @@ export function VibeTab() {
     );
   }
 
+  // Bilingual mode overrides whatever vibeVoiceLang holds — the backend
+  // expects 'auto' so each utterance gets language-detected (and the bias
+  // prompts flip to bilingual variants).
+  const effectiveLang = vibeBilingual ? 'auto' : vibeVoiceLang;
+
   return (
     <VibeForTrack
       key={selectedTrackId}
@@ -215,7 +221,7 @@ export function VibeTab() {
       trackName={selectedTrack?.name || 'this track'}
       pttKey={pttKey}
       auto={auto}
-      voiceLang={vibeVoiceLang}
+      voiceLang={effectiveLang}
       fontFamily={fontFamily}
     />
   );

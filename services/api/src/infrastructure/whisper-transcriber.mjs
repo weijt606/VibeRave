@@ -76,7 +76,38 @@ function buildBiasingPrompt(vocab) {
   return `${cmdBlock} ${anchor}`;
 }
 
+// Bilingual variant — same proper-noun anchors plus a compact Chinese DJ
+// vocabulary. Used when the user enables "Chinese-English mixed input" in
+// the API Settings panel (frontend then sends lang=auto). Keeping the
+// English half identical means proper-nouns like Berghain still survive
+// whisper's front-truncation pass, while the appended zh terms steer the
+// decoder when zh phonetic frames are detected. Total stays under the
+// 224-token window.
+function buildBilingualBiasingPrompt(vocab) {
+  const en = buildBiasingPrompt(vocab);
+  const zh = [
+    '中文DJ术语:',
+    '柏林Berghain、低保真lo-fi、深house、迪斯科、雷鬼、',
+    'techno、节奏、鼓机、踢鼓、军鼓、镲片、贝斯、合成器、',
+    '混响、延迟、滤波器、加速、减速、安静、停止、播放。',
+  ].join(' ');
+  return `${en} ${zh}`;
+}
+
 const DEFAULT_DJ_VOCAB = buildBiasingPrompt(DJ_VOCAB);
+const BILINGUAL_DJ_VOCAB = buildBilingualBiasingPrompt(DJ_VOCAB);
+
+// Decide which bias prompt to feed whisper for a given request. English-only
+// keeps the prompt budget on EN proper nouns; bilingual adds zh anchors when
+// the user opts into mixed input or auto-detect.
+function pickBiasPrompt(lang, fallback, bilingualFallback) {
+  const norm = String(lang || '').toLowerCase();
+  if (!norm || norm === 'auto') return bilingualFallback;
+  if (norm.startsWith('en')) return fallback;
+  // Any non-English explicit hint → bilingual prompt (still has full EN
+  // anchor so EN proper nouns aren't lost).
+  return bilingualFallback;
+}
 
 // Post-process replacement table. Whisper consistently makes these errors
 // even with biasing — handle them deterministically. Order matters: more
@@ -190,17 +221,27 @@ export function createWhisperTranscriber({
 }) {
   let whisper = null;
   let loadPromise = null;
-  const biasingPrompt = initialPrompt || DEFAULT_DJ_VOCAB;
+  // Two biasing prompts: pure-English (DEFAULT_DJ_VOCAB) and EN+zh
+  // (BILINGUAL_DJ_VOCAB). pickBiasPrompt() chooses per request based on
+  // opts.language. An explicit WHISPER_INITIAL_PROMPT env override always
+  // wins — that's still a single prompt regardless of language.
+  const overridePrompt = initialPrompt || null;
   // Token estimate: whisper's BPE averages ~1.3 tokens/word for English.
   // Hard ceiling is 224; warn if we're flirting with truncation so the
   // boot log makes the cause obvious instead of silently dropping the
   // Berghain bias from the front of the prompt.
-  const wordCount = biasingPrompt.split(/\s+/).filter(Boolean).length;
-  const estTokens = Math.round(wordCount * 1.3);
-  console.log(
-    `[whisper-transcriber] biasing prompt: ${wordCount} words, ~${estTokens} tokens` +
-      (estTokens > 220 ? ' ⚠ exceeds whisper 224-token window — front will be truncated' : ''),
-  );
+  for (const [label, p] of [
+    ['EN', DEFAULT_DJ_VOCAB],
+    ['EN+ZH', BILINGUAL_DJ_VOCAB],
+    ...(overridePrompt ? [['override', overridePrompt]] : []),
+  ]) {
+    const wordCount = p.split(/\s+/).filter(Boolean).length;
+    const estTokens = Math.round(wordCount * 1.3);
+    console.log(
+      `[whisper-transcriber] ${label} biasing prompt: ${wordCount} words, ~${estTokens} tokens` +
+        (estTokens > 220 ? ' ⚠ exceeds whisper 224-token window — front will be truncated' : ''),
+    );
+  }
 
   async function ensureModel() {
     if (whisper) return whisper;
@@ -250,6 +291,8 @@ export function createWhisperTranscriber({
     async transcribe(pcm, opts = {}) {
       const w = await ensureModel();
       const lang = opts.language || language;
+      const biasingPrompt =
+        overridePrompt || pickBiasPrompt(lang, DEFAULT_DJ_VOCAB, BILINGUAL_DJ_VOCAB);
       const task = await w.transcribe(pcm, {
         language: lang === 'auto' ? 'auto' : lang,
         format: 'simple',

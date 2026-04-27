@@ -68,15 +68,27 @@ export function createDashScopeStt({ apiKey, baseURL, model, language = 'auto' }
       // nouns like "Berghain" and DJ jargon ("lo-fi", "dub", "breakbeat")
       // get recognised much more reliably than they would in a generic
       // "transcribe whatever" frame.
+      const norm = String(lang || '').toLowerCase();
+      const isEnglishOnly = norm.startsWith('en');
       const langLine =
-        lang && lang !== 'auto' ? `Expected language: ${lang}.` : '';
+        lang && lang !== 'auto'
+          ? `Expected language: ${lang}.`
+          : 'The speaker may use English, Chinese, or a mix — transcribe each segment in its own language.';
+      // Append Chinese DJ vocabulary unless the user explicitly pinned
+      // English. paraformer-v2 / fun-asr / qwen-audio-asr are Chinese-first
+      // so the zh anchors significantly help recall on mixed input.
+      const zhTerms = isEnglishOnly
+        ? ''
+        : '中文常见术语：柏林Berghain、低保真lo-fi、深house、techno、鼓机、踢鼓、贝斯、合成器、混响、延迟。';
       const promptText = [
         'Transcribe the speech verbatim.',
         langLine,
         'The speaker is a DJ giving live-coding music commands —',
         'expect terms like: Berghain, lo-fi, dub, dubby, breakbeat,',
         'drum and bass, acid bass, sub bass, TR-909, TR-808, LinnDrum,',
-        'Rhodes piano, sidechain, BPM, hi-hat. If the audio contains',
+        'Rhodes piano, sidechain, BPM, hi-hat.',
+        zhTerms,
+        'If the audio contains',
         'no recognisable speech, return an empty string — DO NOT make',
         'up a sentence.',
         'Return only the transcript text — no commentary, no time stamps,',

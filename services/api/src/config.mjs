@@ -50,8 +50,14 @@ export function loadConfig() {
       //   api     → any OpenAI-compatible /audio/transcriptions endpoint
       //             (OpenAI Whisper, Groq Whisper, etc.)
       provider: (process.env.STT_PROVIDER || 'whisper').toLowerCase(),
-      modelName: process.env.WHISPER_MODEL || 'base.en',
+      // Default to the *multilingual* base model so Chinese-English mixed
+      // input works out of the box once the user toggles bilingual mode in
+      // the UI. Switch to base.en / small.en for English-only setups if you
+      // want a slight accuracy bump at the cost of zh support.
+      modelName: process.env.WHISPER_MODEL || 'base',
       gpu: process.env.WHISPER_GPU !== '0',
+      // 'auto' lets whisper detect the language per utterance — required for
+      // bilingual input. Per-request `lang` from the frontend overrides this.
       language: process.env.WHISPER_LANGUAGE || 'auto',
       offloadSecs: Number(process.env.WHISPER_OFFLOAD_SECS || 86400),
       initialPrompt: process.env.WHISPER_INITIAL_PROMPT || null,

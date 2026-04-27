@@ -81,6 +81,12 @@ export const defaultSettings = {
   // zh-CN, which butchers English prompts via the wrong phonetic model.
   // Defaulting to en-US matches the demo language.
   vibeVoiceLang: 'en-US',
+  // Bilingual EN/ZH voice input. When ON, /transcribe is called with
+  // lang='auto' so whisper / OpenAI-compat / DashScope all detect language
+  // per utterance; the backend STT bias prompts also flip to bilingual
+  // variants. Default OFF — keeps the English-only fast path for users who
+  // never speak Chinese. Toggled from the API Settings panel.
+  vibeBilingual: false,
   // ─── API settings (LLM + STT) ─────────────────────────────────────────
   // Live in localStorage and are sent as override headers on every API
   // request. Backend never persists them. Empty values mean "use the
@@ -275,6 +281,7 @@ export const $settings = computed(settingsMap, (state) => {
     multiChannelOrbits: parseBoolean(state.multiChannelOrbits),
     includePrebakeScriptInShare: parseBoolean(state.includePrebakeScriptInShare),
     vibeAutoApply: state.vibeAutoApply === undefined ? true : parseBoolean(state.vibeAutoApply),
+    vibeBilingual: parseBoolean(state.vibeBilingual),
     patternAutoStart: isUdels()
       ? false
       : state.patternAutoStart === undefined
@@ -293,6 +300,7 @@ export const setActiveFooter = (tab) => settingsMap.setKey('activeFooter', tab);
 export const setVibePttKey = (code) => settingsMap.setKey('vibePttKey', code);
 export const setVibeAutoApply = (bool) => settingsMap.setKey('vibeAutoApply', !!bool);
 export const setVibeVoiceLang = (lang) => settingsMap.setKey('vibeVoiceLang', lang);
+export const setVibeBilingual = (bool) => settingsMap.setKey('vibeBilingual', !!bool);
 // API settings setters — wired to the API Settings tab.
 export const setLlmProvider = (v) => settingsMap.setKey('llmProvider', v);
 export const setLlmApiKey = (v) => settingsMap.setKey('llmApiKey', v);

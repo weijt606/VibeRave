@@ -10,6 +10,7 @@ import {
   setSttApiKey,
   setSttBaseUrl,
   setSttModel,
+  setVibeBilingual,
   switchLlmPreset,
   switchSttPreset,
 } from '../../../settings.mjs';
@@ -266,6 +267,26 @@ export function ApiSettingsTab() {
             </Pill>
           ))}
         </div>
+
+        <label className="flex items-start gap-2 text-xs cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={!!settings.vibeBilingual}
+            onChange={(e) => setVibeBilingual(e.target.checked)}
+            className="mt-0.5 accent-foreground"
+          />
+          <span className="leading-snug">
+            <span className="font-semibold">Chinese-English mixed input · 中英混合输入</span>
+            <span className="opacity-60 block mt-0.5">
+              Off (default) optimises for English voice prompts. On lets you mix
+              English and Mandarin freely — backend uses bilingual bias prompts
+              and auto-detects language per utterance. For local Whisper, make
+              sure <code className="font-mono">WHISPER_MODEL</code> is a multilingual
+              variant (e.g. <code className="font-mono">base</code>, not
+              <code className="font-mono"> base.en</code>).
+            </span>
+          </span>
+        </label>
 
         {(settings.sttProvider === 'api' || settings.sttProvider === 'dashscope') && (
           <>
