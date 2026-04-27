@@ -6,6 +6,7 @@ import { createTrackEditor } from './createTrackEditor.mjs';
 import {
   $tracks,
   $selectedTrackId,
+  $editorStates,
   ensureInitialTrack,
   selectTrack,
   setTrackViz,
@@ -80,6 +81,13 @@ export function useTrackEditors() {
       if (window.strudelTracks) delete window.strudelTracks;
     };
   }, []);
+
+  // Mirror local editorStates into the global atom so non-React consumers
+  // (CycleBar, etc.) can subscribe without prop drilling. Cheap — runs only
+  // when state actually flips (started/pending/...), not per audio frame.
+  useEffect(() => {
+    $editorStates.set(editorStates);
+  }, [editorStates]);
 
   // Push live viz changes from the store into each editor's vizRef so
   // switching is instant — the next animation frame paints with the new

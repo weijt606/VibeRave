@@ -56,6 +56,19 @@ export function makeTrack({ name, code, viz } = {}) {
 
 export const $tracks = atom(readTracks() ?? []);
 
+// Mirror of useTrackEditors' editorStates — written from the hook,
+// subscribed by global UI (CycleBar, future indicators) that need to
+// know which tracks are currently playing without drilling through
+// the React tree. Shape: { [trackId]: { started, pending, ... } }.
+export const $editorStates = atom({});
+
+// Cheap derived signal: true when at least one track's scheduler is
+// running. Lets the cycle indicator freeze without re-running the
+// whole map check on every frame.
+export const $anyPlaying = computed($editorStates, (states) =>
+  Object.values(states).some((s) => s?.started),
+);
+
 settingsMap.subscribe((state, key) => {
   if (key === TRACKS_KEY) {
     const next = readTracks() ?? [];

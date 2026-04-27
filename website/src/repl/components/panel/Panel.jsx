@@ -6,6 +6,7 @@ import '../../Repl.css';
 import { useLogger } from '../useLogger';
 import { ApiSettingsTab } from './ApiSettingsTab';
 import { ConsoleTab } from './ConsoleTab';
+import { CycleBar } from './CycleBar';
 import { FilesTab } from './FilesTab';
 import { Reference } from './Reference';
 import { SettingsTab } from './SettingsTab';
@@ -173,9 +174,12 @@ export function BottomPanel({ context }) {
         <Tabs setTab={setTab} tab={tab} className={cx(isPanelOpen && 'border-l border-muted')} />
       </div>
       {isPanelOpen && (
-        <div className="w-full h-full overflow-auto border-t border-muted">
-          <PanelContent context={context} tab={tab} />
-        </div>
+        <>
+          <CycleBar />
+          <div className="w-full h-full overflow-auto border-t border-muted">
+            <PanelContent context={context} tab={tab} />
+          </div>
+        </>
       )}
     </PanelNav>
   );
@@ -200,6 +204,7 @@ export function RightPanel({ context }) {
           <PanelCloseButton />
           <Tabs setTab={setTab} tab={tab} className="border-l border-muted" />
         </div>
+        <CycleBar />
         <div className="overflow-auto h-full">
           <PanelContent context={context} tab={tab} />
         </div>
