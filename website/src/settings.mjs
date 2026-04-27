@@ -91,10 +91,20 @@ export const defaultSettings = {
   llmBaseUrl: 'https://api.openai.com/v1',
   llmModel: 'gpt-4o-mini',
   llmTemperature: 0.85,
-  sttProvider: 'whisper',      // 'whisper' | 'vosk' | 'api'
+  // Active preset id + per-preset cache so switching between presets
+  // doesn't reset previously-entered keys / URLs / models. When the user
+  // clicks a different preset we snapshot the current llm{ApiKey,BaseUrl,
+  // Model,Temperature} into llmPresetConfigs[<oldId>], then load
+  // llmPresetConfigs[<newId>] — falling back to preset defaults only on
+  // the very first visit to a preset.
+  llmActivePreset: 'openai',
+  llmPresetConfigs: '{}',      // JSON: { [presetId]: { apiKey, baseUrl, model, temperature } }
+  sttProvider: 'whisper',      // 'whisper' | 'vosk' | 'api' | 'dashscope'
   sttApiKey: '',
   sttBaseUrl: 'https://api.openai.com/v1',
   sttModel: 'whisper-1',
+  sttActivePreset: 'whisper',
+  sttPresetConfigs: '{}',
   // Persisted multi-track state.
   tracks: '[]',
 };
@@ -293,6 +303,66 @@ export const setSttProvider = (v) => settingsMap.setKey('sttProvider', v);
 export const setSttApiKey = (v) => settingsMap.setKey('sttApiKey', v);
 export const setSttBaseUrl = (v) => settingsMap.setKey('sttBaseUrl', v);
 export const setSttModel = (v) => settingsMap.setKey('sttModel', v);
+
+// Per-preset config caching: snapshot the *current* fields under the
+// old preset id, then either restore the saved snapshot for the new
+// preset or fall back to the preset's hardcoded defaults. This is the
+// fix for "I configured Qwen, switched to Ollama, came back to Qwen,
+// my key was wiped".
+
+function readJsonMap(key) {
+  try {
+    const raw = settingsMap.get()[key];
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function switchLlmPreset(preset) {
+  const state = settingsMap.get();
+  const cache = readJsonMap('llmPresetConfigs');
+  // Snapshot current fields under the previously-active preset.
+  if (state.llmActivePreset) {
+    cache[state.llmActivePreset] = {
+      apiKey: state.llmApiKey,
+      baseUrl: state.llmBaseUrl,
+      model: state.llmModel,
+      temperature: state.llmTemperature,
+    };
+    settingsMap.setKey('llmPresetConfigs', JSON.stringify(cache));
+  }
+  // Load saved snapshot for the new preset, fall back to defaults.
+  const saved = cache[preset.id];
+  setLlmProvider(preset.provider);
+  setLlmBaseUrl(saved?.baseUrl ?? preset.baseUrl);
+  setLlmModel(saved?.model ?? preset.model);
+  if (saved) {
+    if (typeof saved.apiKey === 'string') setLlmApiKey(saved.apiKey);
+    if (typeof saved.temperature === 'number') setLlmTemperature(saved.temperature);
+  }
+  settingsMap.setKey('llmActivePreset', preset.id);
+}
+
+export function switchSttPreset(preset) {
+  const state = settingsMap.get();
+  const cache = readJsonMap('sttPresetConfigs');
+  if (state.sttActivePreset) {
+    cache[state.sttActivePreset] = {
+      apiKey: state.sttApiKey,
+      baseUrl: state.sttBaseUrl,
+      model: state.sttModel,
+    };
+    settingsMap.setKey('sttPresetConfigs', JSON.stringify(cache));
+  }
+  const saved = cache[preset.id];
+  setSttProvider(preset.provider);
+  setSttBaseUrl(saved?.baseUrl ?? preset.baseUrl ?? '');
+  setSttModel(saved?.model ?? preset.model ?? '');
+  if (saved && typeof saved.apiKey === 'string') setSttApiKey(saved.apiKey);
+  settingsMap.setKey('sttActivePreset', preset.id);
+}
 export const setPanelPinned = (bool) => settingsMap.setKey('isPanelPinned', bool);
 export const setIsPanelOpened = (bool) => settingsMap.setKey('isPanelOpen', bool);
 export const setSettingsTab = (tab) => settingsMap.setKey('settingsTab', tab);

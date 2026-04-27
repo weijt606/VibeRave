@@ -3,15 +3,15 @@ import {
   useSettings,
   LLM_PRESETS,
   STT_PRESETS,
-  setLlmProvider,
   setLlmApiKey,
   setLlmBaseUrl,
   setLlmModel,
   setLlmTemperature,
-  setSttProvider,
   setSttApiKey,
   setSttBaseUrl,
   setSttModel,
+  switchLlmPreset,
+  switchSttPreset,
 } from '../../../settings.mjs';
 import { API_URL } from './vibe/vibeApi.mjs';
 
@@ -131,15 +131,16 @@ export function ApiSettingsTab() {
   const [llmTest, setLlmTest] = useState(null);
   const [sttTest, setSttTest] = useState(null);
 
+  // switchLlmPreset / switchSttPreset (from settings.mjs) snapshot the
+  // current fields under the previously-active preset, then restore the
+  // saved fields for the new preset (or fall back to preset defaults
+  // if the user has never visited it before). This is what makes
+  // "Qwen → Ollama → Qwen" preserve the originally-typed Qwen key.
   function applyLlmPreset(preset) {
-    setLlmProvider(preset.provider);
-    setLlmBaseUrl(preset.baseUrl);
-    setLlmModel(preset.model);
+    switchLlmPreset(preset);
   }
   function applySttPreset(preset) {
-    setSttProvider(preset.provider);
-    setSttBaseUrl(preset.baseUrl || '');
-    setSttModel(preset.model || '');
+    switchSttPreset(preset);
   }
 
   // Run a backend health-test endpoint with the current override headers
@@ -194,7 +195,7 @@ export function ApiSettingsTab() {
           {LLM_PRESETS.map((p) => (
             <Pill
               key={p.id}
-              active={settings.llmBaseUrl === p.baseUrl && settings.llmProvider === p.provider}
+              active={settings.llmActivePreset === p.id}
               onClick={() => applyLlmPreset(p)}
               title={`${p.label} — ${p.baseUrl}`}
             >
@@ -255,18 +256,15 @@ export function ApiSettingsTab() {
         subtitle="Pick a local engine for privacy + offline use, or a cloud API for accuracy."
       >
         <div className="flex flex-wrap gap-1.5">
-          {STT_PRESETS.map((p) => {
-            const active =
-              p.provider === settings.sttProvider &&
-              (p.provider === 'whisper' ||
-                p.provider === 'vosk' ||
-                settings.sttBaseUrl === p.baseUrl);
-            return (
-              <Pill key={p.id} active={active} onClick={() => applySttPreset(p)}>
-                {p.label}
-              </Pill>
-            );
-          })}
+          {STT_PRESETS.map((p) => (
+            <Pill
+              key={p.id}
+              active={settings.sttActivePreset === p.id}
+              onClick={() => applySttPreset(p)}
+            >
+              {p.label}
+            </Pill>
+          ))}
         </div>
 
         {(settings.sttProvider === 'api' || settings.sttProvider === 'dashscope') && (
