@@ -30,7 +30,10 @@ import { dispatchMetaCommand } from './vibe/metaCommands.mjs';
 
 const FLUSH_KEY = 'strudel:vibe:silenceFlush';
 const SILENCE_MS_KEY = 'strudel:vibe:silenceMs';
-const SILENCE_OPTIONS = [2000, 3000, 5000, 8000, 10000];
+// 0 = "fire as soon as STT returns" — disables both the in-recording
+// silence-detection auto-flush AND the post-STT review delay below.
+// Otherwise: silence threshold (ms) for mid-PTT auto-flush.
+const SILENCE_OPTIONS = [0, 2000, 3000, 5000, 8000, 10000];
 const DEFAULT_SILENCE_MS = 5000;
 const WAVEFORM_BARS = 18;
 // Auto-send delay: STT lands → wait this long → fire /generate. Lets the
@@ -501,15 +504,20 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
       // Pin so the user sees what was heard even after send() clears
       // the textarea. Independent of textarea timing.
       setLastTranscript(text);
-      // Delayed auto-send: gives the user time to read and override.
-      // Typing in the textarea cancels the timer.
+      // 0s mode → fire immediately, no review window. Otherwise: short
+      // delayed auto-send so the user can read the transcript and either
+      // type to override (cancels the timer) or wait it out.
       clearAutoSendTimer();
-      setAutoSendArmed(true);
-      autoSendTimerRef.current = setTimeout(() => {
-        autoSendTimerRef.current = null;
-        setAutoSendArmed(false);
+      if (silenceMs === 0) {
         sendRef.current?.(text);
-      }, AUTO_SEND_DELAY_MS);
+      } else {
+        setAutoSendArmed(true);
+        autoSendTimerRef.current = setTimeout(() => {
+          autoSendTimerRef.current = null;
+          setAutoSendArmed(false);
+          sendRef.current?.(text);
+        }, AUTO_SEND_DELAY_MS);
+      }
     } catch (err) {
       setError(err.message || String(err));
     } finally {
