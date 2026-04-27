@@ -43,6 +43,7 @@ const SKILL_ORDER = [
   'reference/effects.md',
   'reference/modulation.md',
   'reference/tempo.md',
+  'reference/tonal.md',
   'reference/visualization.md',
   'reference/dual-deck.md',
   'recipes/generate.md',

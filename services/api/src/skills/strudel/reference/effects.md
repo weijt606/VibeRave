@@ -28,10 +28,18 @@ note("[c2 <eb2 <g2 g1>>]*2").s('sawtooth').vowel("<a e i <o u>>")
 | `.decay(s)` | Decay time. |
 | `.sustain(0..1)` | Sustain level. |
 | `.release(s)` | Release time after note-off. |
+| `.adsr("a:d:s:r")` | All four at once as a colon-separated string — idiomatic Strudel shorthand. |
 
 ```js
+// Long form
 note("c3 e3 g3 c4").attack(0.05).release(0.4)
+
+// Shorthand — equivalent, fewer tokens
+note("c3 e3 g3 c4").adsr(".05:.1:.5:.4")
 ```
+
+Use the shorthand when you're tweaking all four envelope params at
+once. Use the individual setters when you only want to change one.
 
 ## Spatial — reverb / delay
 

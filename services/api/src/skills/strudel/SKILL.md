@@ -67,14 +67,15 @@ specialise earlier ones:
 8. `reference/effects.md`
 9. `reference/modulation.md`
 10. `reference/tempo.md`
-11. `reference/visualization.md`
-12. `reference/dual-deck.md` — stereo split / DJ mode
-13. `recipes/generate.md`
-14. `recipes/explain.md`
-15. `recipes/debug.md`
-16. `recipes/vary.md`
-17. `examples/genres.md`
-18. `examples/techniques.md`
+11. `reference/tonal.md` — chord(), voicing(), mode(), anchor()
+12. `reference/visualization.md`
+13. `reference/dual-deck.md` — stereo split / DJ mode
+14. `recipes/generate.md`
+15. `recipes/explain.md`
+16. `recipes/debug.md`
+17. `recipes/vary.md`
+18. `examples/genres.md`
+19. `examples/techniques.md`
 
 The minimum viable system prompt is **rules + reference/sounds +
 reference/mini-notation + reference/pattern-transforms + examples/genres**.

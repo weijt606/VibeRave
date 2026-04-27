@@ -208,6 +208,45 @@ stack(
 ).crush(8)
 ```
 
+## Hard / industrial techno (FM bass, 138 BPM)
+
+When the user wants the bass to feel metallic, harder, more aggressive
+than what a sawtooth+lpf can do, reach for FM synthesis. `fmh` is the
+modulator-to-carrier ratio (integer = harmonic, fractional = inharmonic
+metallic clang); `fmi` is the modulation index (depth — higher = more
+overtones). Modulating `fmi` over time with `<...>` gives the bass
+movement without touching the filter.
+
+```js
+setcps(138/60/4)
+stack(
+  s("bd*4").bank("RolandTR909").gain(1),
+  s("~ ~ cp ~").bank("RolandTR909").gain(0.55).room(0.5),
+  s("hh*8").bank("RolandTR909").gain(perlin.range(0.3, 0.6)),
+  note("c2!4 c2 eb2 c2 g1").s("sine").fmh(2).fmi("<0 4 8 12>")
+    .adsr(".005:.05:.7:.15").gain(0.7),
+  note("<g3 ~ bb3 ~>").s("sine").fmh("<2 3>").fmi(8)
+    .adsr(".01:.2:.3:.3").gain(0.4).room(0.4)
+)
+```
+
+## Jazz progression with chord(...).voicing()
+
+When the user names chords ("Cm7 to Am7 to Fmaj7"), `chord(...).voicing()`
+picks idiomatic voicings automatically — much more harmonically rich than
+hand-spelling triads. Pair with `.anchor()` to keep voicings in a sane
+register.
+
+```js
+setcps(90/60/4)
+stack(
+  s("bd ~ ~ ~, ~ ~ sd ~, hh*8").bank("LinnDrum").gain(0.7).swing(4),
+  chord("<Cm7 Fm7 Bb7 Ebmaj7>").voicing().anchor("c4")
+    .s("gm_epiano2").attack(0.05).release(0.5).room(0.4).gain(0.5),
+  chord("<Cm7 Fm7 Bb7 Ebmaj7>").root().sub(12).s("gm_acoustic_bass").gain(0.6)
+)
+```
+
 ## How to use these
 
 Pick the closest template, then mutate per the user's request:
@@ -227,3 +266,17 @@ Pick the closest template, then mutate per the user's request:
   it isn't already.
 - **"More reverb"** → `.room(0.7-0.9)` on the most-prominent melodic
   layer, not the kick.
+- **"Harder bass" / "metallic" / "industrial"** → swap `.s("sawtooth")`
+  for `.s("sine").fmh(N).fmi(M)` — FM synthesis. `fmh` integer 1-3 = warm
+  harmonic; fractional / 5+ = clangy/metallic. `fmi` 4-12 controls
+  brightness. See the Hard / industrial techno template.
+- **"Vocal-y" / "wow filter" / "warm vowel filter"** → add
+  `.vowel("<a e i o>")` to the synth layer. Animates between formant
+  poses each cycle — the classic talkbox / wah trick.
+- **"Dorian" / "phrygian" / "lydian feel"** → swap `.scale("X:minor")`
+  for `.mode("dorian")` (or whichever mode the user named). For chord-based
+  prompts ("Cm7 to Am7"), use `chord(...).voicing()` instead — see the
+  Jazz progression template above.
+- **"Add ADSR shape"** → `.adsr(":a:d:s:r")` shorthand, e.g.
+  `.adsr(".005:.05:.7:.15")` for a punchy plucked envelope, or
+  `.adsr(".5:.2:.4:1.2")` for a slow swell.
