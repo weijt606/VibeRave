@@ -243,7 +243,7 @@ stack(
   s("bd ~ ~ ~, ~ ~ sd ~, hh*8").bank("LinnDrum").gain(0.7).swing(4),
   chord("<Cm7 Fm7 Bb7 Ebmaj7>").voicing().anchor("c4")
     .s("gm_epiano2").attack(0.05).release(0.5).room(0.4).gain(0.5),
-  chord("<Cm7 Fm7 Bb7 Ebmaj7>").root().sub(12).s("gm_acoustic_bass").gain(0.6)
+  chord("<Cm7 Fm7 Bb7 Ebmaj7>").rootNotes(2).s("gm_acoustic_bass").gain(0.6)
 )
 ```
 

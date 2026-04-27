@@ -56,7 +56,7 @@ For a bass line locked to the chord's mode:
 
 ```js
 chord("<Dm7 G7 Cmaj7>").voicing()
-  .stack(chord("<Dm7 G7 Cmaj7>").root().sub(12).s("sawtooth").lpf(600))
+  .stack(chord("<Dm7 G7 Cmaj7>").rootNotes(2).s("sawtooth").lpf(600))
 ```
 
 ## `anchor("note")` — pin the voicing centre
