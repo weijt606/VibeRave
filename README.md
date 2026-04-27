@@ -15,12 +15,19 @@
 </p>
 
 <p align="center">
-  <a href="#quickstart">Quickstart</a> ·
-  <a href="#input-modes">Input modes</a> ·
-  <a href="#prompt-cookbook">Prompt cookbook</a> ·
-  <a href="#backend-matrix">Backends</a> ·
-  <a href="#architecture">Architecture</a> ·
-  <a href="LICENSE">License</a>
+  <a href="#quickstart"><img src="https://img.shields.io/badge/Quickstart-ec4899?style=for-the-badge" alt="Quickstart"></a>
+  <a href="#input-modes"><img src="https://img.shields.io/badge/Input%20modes-22d3ee?style=for-the-badge" alt="Input modes"></a>
+  <a href="#prompt-cookbook"><img src="https://img.shields.io/badge/Prompt%20cookbook-ec4899?style=for-the-badge" alt="Prompt cookbook"></a>
+  <a href="#backend-matrix"><img src="https://img.shields.io/badge/Backends-22d3ee?style=for-the-badge" alt="Backends"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Architecture-ec4899?style=for-the-badge" alt="Architecture"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-22d3ee?style=for-the-badge" alt="License: AGPL-3.0"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/weijt606/VibeRave/stargazers"><img src="https://img.shields.io/github/stars/weijt606/VibeRave?style=flat-square&color=ec4899" alt="GitHub stars"></a>
+  <a href="https://strudel.cc"><img src="https://img.shields.io/badge/built%20on-Strudel-22d3ee?style=flat-square" alt="Built on Strudel"></a>
+  <img src="https://img.shields.io/badge/node-%E2%89%A520.6-22d3ee?style=flat-square" alt="Node ≥ 20.6">
+  <img src="https://img.shields.io/badge/PRs-welcome-ec4899?style=flat-square" alt="PRs welcome">
 </p>
 
 <br/>
