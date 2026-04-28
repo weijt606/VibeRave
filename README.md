@@ -234,18 +234,18 @@ multi-track UI are VibeRave-specific.
  │  ◐  VIBERAVE                                                         │  ← header (logo only)
  ├────────────────────────────────────┬─────────────────────────────────┤
  │  + New track  ■ Stop all  🗑 Clear │  [vibe] [api] [sounds] ...      │  ← tabs row
- ├────────────────────────────────────┤▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│  ← cycle indicator (1px, scans per cycle)
- │ ▶ ⚡ ● Track 1 ┃ABC┃ ▮▮▮ 🗑 │ Piano roll ▼  │                       │
- │ ┌────────── viz canvas ─────────┐ │   (drag bottom edge to resize)  │
- │ │ ▓▓▓▓ ▓▓▓ ▓▓▓▓▓ (per-track)   │ │                                 │
- │ └───────────────────────────────┘ │     Vibe / API / Settings panel │
- │ ▶ ⚡ ● Track 2 ┃ABC┃ ▮▮▮ 🗑 │ Scope ▼      │                       │
+ ├────────────────────────────────────┤▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  │  ← cycle indicator (1px, scans per cycle)
+ │ ▶ ⚡ ● Track 1 ┃ABC┃ ▮▮▮ 🗑 │ Piano roll ▼  │                         │
+ │ ┌────────── viz canvas ─────────┐  │   (drag bottom edge to resize)  │
+ │ │ ▓▓▓▓ ▓▓▓ ▓▓▓▓▓ (per-track)    │  │                                 │
+ │ └───────────────────────────────┘  │     Vibe / API / Settings panel │
+ │ ▶ ⚡ ● Track 2 ┃ABC┃ ▮▮▮ 🗑 │Scope ▼│                                 │
  │ ┌─── viz canvas ───┐               │                                 │
  │ │ ~~~~~~~~~~~~~    │               │                                 │
  │ └──────────────────┘               │                                 │
  ├────────────────────────────────────┤                                 │
  │  </>  CODE · TRACK 1   ▼   ▶ APPLY │                                 │  ← collapsible code panel
- │  // CodeMirror editor for selected track                              │
+ │  // CodeMirror editor for selected track                             │
  └──────────────────────────────────────────────────────────────────────┘
 ```
 
