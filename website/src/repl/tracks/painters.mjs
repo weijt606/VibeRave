@@ -19,10 +19,13 @@ function getDrawOptions(drawTime, options = {}) {
   return { ...options, cycles, playhead };
 }
 
-// Pianoroll using Strudel's stock __pianoroll. Default fold=1 wraps notes
-// into the unique-pitch set, fillActive=false + strokeActive=true gives
-// the classic "block lights up as the playhead crosses it" feel. Known
-// limitation: a pattern with only ONE unique pitch (e.g. `s("bd*4")`)
+// Pianoroll using Strudel's stock __pianoroll defaults — fold=1 wraps
+// notes into the unique-pitch set, fillActive=false + strokeActive=true
+// gives the iconic "block lights up as the playhead crosses it" outline
+// effect. Matches the official Strudel REPL look so users can paste
+// patterns from strudel.cc and get the same viz.
+//
+// Known limitation: a pattern with only ONE unique pitch (e.g. `s("bd*4")`)
 // collapses to a single full-canvas-height stripe — Strudel's algorithm
 // allocates `canvas_height / unique_count` per bin. For drum-only loops
 // without pitch variation, prefer the Scope or Waveform viz instead.
@@ -112,6 +115,10 @@ const pianoroll = (ctx, time, haps, drawTime) => {
     time,
     haps: renderHaps,
     ...getDrawOptions(drawTime, {
+      // Strudel-native pianoroll defaults: inactive notes filled, active
+      // notes shown as a stroked outline (fillActive=false implicit,
+      // strokeActive=true implicit). The "block lights up as the playhead
+      // crosses it" effect is part of Strudel's signature look.
       inactive: 'rgba(180,210,255,0.85)',
       active: '#ffffff',
       playheadColor: 'rgba(255,255,255,0.6)',
@@ -362,6 +369,263 @@ const spectrum = (ctx, _time, _haps, _drawTime, opts) => {
   spectrogramFrames.set(id, ctx.getImageData(0, 0, canvas.width, canvas.height));
 };
 
+// === audioMotion-inspired bar viz painters ===
+// We DON'T use the `audiomotion-analyzer` library because its constructor
+// hooks into the audio graph (`source.connect(input)`) which interferes
+// with Strudel's existing analyser → destination routing and silenced
+// playback. Instead we replicate the visual style — log-frequency bin
+// aggregation + rainbow gradient bars — using our own per-track FFT data
+// from `analysers[id]`. Pure rendering, zero audio routing risk.
+
+// Build a static rainbow gradient (red→yellow→green→cyan→blue→magenta).
+// Lazily instantiated per canvas because CanvasGradient is bound to a ctx.
+const __barGradients = new WeakMap();
+function getRainbowGradient(ctx) {
+  let g = __barGradients.get(ctx.canvas);
+  if (g && g.h === ctx.canvas.height) return g.gradient;
+  const grad = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+  grad.addColorStop(0, '#ff0040');
+  grad.addColorStop(0.2, '#ff8000');
+  grad.addColorStop(0.4, '#ffff00');
+  grad.addColorStop(0.6, '#00ff00');
+  grad.addColorStop(0.8, '#00bfff');
+  grad.addColorStop(1, '#8000ff');
+  __barGradients.set(ctx.canvas, { gradient: grad, h: ctx.canvas.height });
+  return grad;
+}
+function getBrandGradient(ctx) {
+  // magenta → cyan, in the brand palette
+  const grad = ctx.createLinearGradient(0, 0, ctx.canvas.width, 0);
+  grad.addColorStop(0, 'rgba(236, 72, 153, 0.85)');
+  grad.addColorStop(1, 'rgba(34, 211, 238, 0.85)');
+  return grad;
+}
+
+// dB → 0..1 with a soft knee. -80 dB or quieter → 0; -10 dB → 0.93.
+function dbToUnit(db) {
+  const min = -80;
+  const max = 0;
+  const k = (db - min) / (max - min);
+  return Math.max(0, Math.min(1, k));
+}
+
+// Aggregate FFT bins into N visual bars on a log frequency scale (each
+// bar covers a constant ratio of the audible range, mimicking octave-based
+// musical perception). Returns an array of normalised heights [0..1].
+function buildLogBars(freqData, sampleRate, fftSize, barCount, fMin = 30, fMax = 16000) {
+  const out = new Float32Array(barCount);
+  const binCount = freqData.length;
+  const binHz = sampleRate / fftSize; // hz per bin
+  const lnMin = Math.log(fMin);
+  const lnMax = Math.log(fMax);
+  for (let i = 0; i < barCount; i++) {
+    const lo = Math.exp(lnMin + ((lnMax - lnMin) * i) / barCount);
+    const hi = Math.exp(lnMin + ((lnMax - lnMin) * (i + 1)) / barCount);
+    const loBin = Math.max(0, Math.floor(lo / binHz));
+    const hiBin = Math.min(binCount - 1, Math.ceil(hi / binHz));
+    let peak = -Infinity;
+    for (let j = loBin; j <= hiBin; j++) {
+      if (freqData[j] > peak) peak = freqData[j];
+    }
+    out[i] = dbToUnit(peak);
+  }
+  return out;
+}
+
+function drawIdleBaseline(ctx) {
+  const { canvas } = ctx;
+  ctx.save();
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height / 2);
+  ctx.lineTo(canvas.width, canvas.height / 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Spectrum bars — "AM Bars" style. Log-frequency, gap between bars,
+// rainbow vertical gradient.
+const amBars = (ctx, _t, _h, _dt, opts) => {
+  const id = opts?.analyzerId ?? 1;
+  const an = analysers[id];
+  const { canvas } = ctx;
+  if (!an) {
+    drawIdleBaseline(ctx);
+    return;
+  }
+  // Strudel's per-track analyser is configured with smoothing already.
+  // We pull the live frequency data via the shared scratch buffer.
+  const data = getAnalyzerData('frequency', id);
+  const BAR_COUNT = 64;
+  const bars = buildLogBars(data, an.context.sampleRate, an.fftSize, BAR_COUNT);
+  const gradient = getRainbowGradient(ctx);
+  const gap = 1;
+  const w = (canvas.width - gap * (BAR_COUNT + 1)) / BAR_COUNT;
+  ctx.fillStyle = gradient;
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const h = bars[i] * canvas.height;
+    ctx.fillRect(gap + i * (w + gap), canvas.height - h, w, h);
+  }
+};
+
+// Octave bands — fewer, fatter bars (1/3 octave aggregation), brand gradient.
+const amOctaves = (ctx, _t, _h, _dt, opts) => {
+  const id = opts?.analyzerId ?? 1;
+  const an = analysers[id];
+  const { canvas } = ctx;
+  if (!an) {
+    drawIdleBaseline(ctx);
+    return;
+  }
+  const data = getAnalyzerData('frequency', id);
+  const BAR_COUNT = 24; // 1/3 octave-ish over our 9 octaves
+  const bars = buildLogBars(data, an.context.sampleRate, an.fftSize, BAR_COUNT);
+  const gradient = getBrandGradient(ctx);
+  const gap = 2;
+  const w = (canvas.width - gap * (BAR_COUNT + 1)) / BAR_COUNT;
+  ctx.fillStyle = gradient;
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const h = bars[i] * canvas.height;
+    ctx.fillRect(gap + i * (w + gap), canvas.height - h, w, h);
+  }
+};
+
+// LED-style: each bar is divided into N small rectangular blocks (LEDs)
+// that light up incrementally with the level. Classic Winamp aesthetic.
+const amLed = (ctx, _t, _h, _dt, opts) => {
+  const id = opts?.analyzerId ?? 1;
+  const an = analysers[id];
+  const { canvas } = ctx;
+  if (!an) {
+    drawIdleBaseline(ctx);
+    return;
+  }
+  const data = getAnalyzerData('frequency', id);
+  const BAR_COUNT = 32;
+  const bars = buildLogBars(data, an.context.sampleRate, an.fftSize, BAR_COUNT);
+  const gradient = getRainbowGradient(ctx);
+  const gap = 2;
+  const ledGap = 1;
+  const ledRows = 12;
+  const w = (canvas.width - gap * (BAR_COUNT + 1)) / BAR_COUNT;
+  const ledH = (canvas.height - ledGap * (ledRows + 1)) / ledRows;
+  ctx.fillStyle = gradient;
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const lit = Math.floor(bars[i] * ledRows);
+    const x = gap + i * (w + gap);
+    for (let r = 0; r < lit; r++) {
+      const y = canvas.height - ledGap - (r + 1) * (ledH + ledGap) + ledGap;
+      ctx.fillRect(x, y, w, ledH);
+    }
+  }
+};
+
+// Mirrored bars (vertical symmetry around the canvas mid-line). Same
+// log-frequency aggregation as amBars but each bar is split: half above
+// and half below the centre. Reads like a club-equipment display.
+const amMirror = (ctx, _t, _h, _dt, opts) => {
+  const id = opts?.analyzerId ?? 1;
+  const an = analysers[id];
+  const { canvas } = ctx;
+  if (!an) {
+    drawIdleBaseline(ctx);
+    return;
+  }
+  const data = getAnalyzerData('frequency', id);
+  const BAR_COUNT = 64;
+  const bars = buildLogBars(data, an.context.sampleRate, an.fftSize, BAR_COUNT);
+  const gradient = getRainbowGradient(ctx);
+  const gap = 1;
+  const w = (canvas.width - gap * (BAR_COUNT + 1)) / BAR_COUNT;
+  const midY = canvas.height / 2;
+  ctx.fillStyle = gradient;
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const halfH = (bars[i] * canvas.height) / 2;
+    const x = gap + i * (w + gap);
+    ctx.fillRect(x, midY - halfH, w, halfH * 2);
+  }
+};
+
+// Smooth filled curve through the bar peaks. Uses quadratic-curve
+// interpolation between consecutive points so the silhouette stays
+// continuous instead of stair-stepping like discrete bars. Same rainbow
+// gradient fill below the curve.
+const amCurve = (ctx, _t, _h, _dt, opts) => {
+  const id = opts?.analyzerId ?? 1;
+  const an = analysers[id];
+  const { canvas } = ctx;
+  if (!an) {
+    drawIdleBaseline(ctx);
+    return;
+  }
+  const data = getAnalyzerData('frequency', id);
+  const BAR_COUNT = 96;
+  const bars = buildLogBars(data, an.context.sampleRate, an.fftSize, BAR_COUNT);
+  const gradient = getRainbowGradient(ctx);
+  const stepX = canvas.width / (BAR_COUNT - 1);
+  const yOf = (i) => canvas.height - bars[i] * canvas.height;
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height);
+  ctx.lineTo(0, yOf(0));
+  // Quadratic curves through midpoints — smooth without overshoot.
+  for (let i = 0; i < BAR_COUNT - 1; i++) {
+    const x = i * stepX;
+    const xNext = (i + 1) * stepX;
+    const xC = (x + xNext) / 2;
+    const yC = (yOf(i) + yOf(i + 1)) / 2;
+    ctx.quadraticCurveTo(x, yOf(i), xC, yC);
+  }
+  ctx.lineTo(canvas.width, yOf(BAR_COUNT - 1));
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.closePath();
+  ctx.fill();
+};
+
+// Radial / circular: bars radiate from the canvas centre outward. 64
+// angular slices, each a coloured spoke whose length scales with the
+// log-frequency bin's amplitude. Hue rotates around the circle. Square
+// shape so the geometry doesn't deform.
+const amRadial = (ctx, _t, _h, _dt, opts) => {
+  const id = opts?.analyzerId ?? 1;
+  const an = analysers[id];
+  const { canvas } = ctx;
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const innerR = Math.min(cx, cy) * 0.25;
+  const outerR = Math.min(cx, cy) * 0.95;
+  const reach = outerR - innerR;
+  if (!an) {
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  const data = getAnalyzerData('frequency', id);
+  const BAR_COUNT = 64;
+  const bars = buildLogBars(data, an.context.sampleRate, an.fftSize, BAR_COUNT);
+  const angleStep = (Math.PI * 2) / BAR_COUNT;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const a = i * angleStep - Math.PI / 2; // start at 12 o'clock
+    const len = innerR + bars[i] * reach;
+    const hue = (i / BAR_COUNT) * 360;
+    ctx.strokeStyle = `hsl(${hue}, 100%, 60%)`;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * innerR, cy + Math.sin(a) * innerR);
+    ctx.lineTo(cx + Math.cos(a) * len, cy + Math.sin(a) * len);
+    ctx.stroke();
+  }
+};
+
 // Hook called by useTrackEditors when a track is deleted, so the
 // per-track imageData / history buffers and the analyser slot don't leak.
 export function disposeAnalyzerArtifacts(analyzerId) {
@@ -380,7 +644,21 @@ export function disposeAnalyzerArtifacts(analyzerId) {
 // 23ms scope snapshot), but the line still reads as a useful "where in
 // the loop are we" reference and helps the user time hot-swaps.
 const PLAYHEAD_COLOR = 'rgba(34, 211, 238, 0.45)'; // sync with --vr-accent-cyan
-export const SKIP_PLAYHEAD = new Set(['pianoroll', 'spiral']);
+// Painters that should NOT receive the cycle-playhead overlay:
+//  - pianoroll: already draws its own playhead.
+//  - spiral: radial — no horizontal time axis.
+//  - amBars/amOctaves/amLed: x-axis is frequency, not time, so a moving
+//    cycle line would be visually misleading.
+export const SKIP_PLAYHEAD = new Set([
+  'pianoroll',
+  'spiral',
+  'amBars',
+  'amOctaves',
+  'amLed',
+  'amMirror',
+  'amCurve',
+  'amRadial',
+]);
 export function drawCyclePlayhead(ctx, time) {
   if (typeof time !== 'number' || !Number.isFinite(time)) return;
   const { canvas } = ctx;
@@ -405,6 +683,15 @@ export const PAINTERS = {
   spectrum: { label: 'Spectrum', paint: spectrum, shape: 'wide' },
   scope: { label: 'Scope', paint: scope, shape: 'wide' },
   chromaticScope: { label: 'Chromatic', paint: chromaticScope, shape: 'wide' },
+  // audioMotion-inspired bar viz (rainbow / brand / LED gradients) —
+  // log-frequency bins built from the per-track AnalyserNode. Pure
+  // rendering, no audio routing involved.
+  amBars: { label: 'AM Bars', paint: amBars, shape: 'wide' },
+  amOctaves: { label: 'AM Octaves', paint: amOctaves, shape: 'wide' },
+  amLed: { label: 'AM LED', paint: amLed, shape: 'wide' },
+  amMirror: { label: 'AM Mirror', paint: amMirror, shape: 'wide' },
+  amCurve: { label: 'AM Curve', paint: amCurve, shape: 'wide' },
+  amRadial: { label: 'AM Radial', paint: amRadial, shape: 'square' },
   spiral: { label: 'Spiral', paint: spiral, shape: 'square' },
 };
 
