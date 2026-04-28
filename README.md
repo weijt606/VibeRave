@@ -17,10 +17,11 @@
 <p align="center">
   <a href="#quickstart"><img src="https://img.shields.io/badge/Quickstart-ec4899?style=for-the-badge" alt="Quickstart"></a>
   <a href="#input-modes"><img src="https://img.shields.io/badge/Input%20modes-22d3ee?style=for-the-badge" alt="Input modes"></a>
-  <a href="#prompt-cookbook"><img src="https://img.shields.io/badge/Prompt%20cookbook-ec4899?style=for-the-badge" alt="Prompt cookbook"></a>
-  <a href="#backend-matrix"><img src="https://img.shields.io/badge/Backends-22d3ee?style=for-the-badge" alt="Backends"></a>
-  <a href="#architecture"><img src="https://img.shields.io/badge/Architecture-ec4899?style=for-the-badge" alt="Architecture"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-22d3ee?style=for-the-badge" alt="License: AGPL-3.0"></a>
+  <a href="#ui-guide"><img src="https://img.shields.io/badge/UI%20guide-ec4899?style=for-the-badge" alt="UI guide"></a>
+  <a href="#prompt-cookbook"><img src="https://img.shields.io/badge/Prompt%20cookbook-22d3ee?style=for-the-badge" alt="Prompt cookbook"></a>
+  <a href="#backend-matrix"><img src="https://img.shields.io/badge/Backends-ec4899?style=for-the-badge" alt="Backends"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Architecture-22d3ee?style=for-the-badge" alt="Architecture"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-ec4899?style=for-the-badge" alt="License: AGPL-3.0"></a>
 </p>
 
 <p align="center">
@@ -91,7 +92,7 @@ with no paid services.
 <br/>
 
 <p align="center">
-  <img src="docs/images/viberave-interface.png" alt="VibeRave — live UI" width="100%" />
+  <img src="docs/images/demo-1.gif" alt="VibeRave — live demo (voice → LLM → hot-swap → music)" width="100%" />
 </p>
 
 <br/>
@@ -219,6 +220,130 @@ to expand what VOSK will accept.
 | **No mic prompt / "Could not start recording"** | Browser blocked microphone access. Click the lock icon in the URL bar → allow Microphone. Reload. |
 | **Tracks drift / beats don't align** | Should not happen on `main` — sync is hard-coded on. If you see it, file an issue with browser + Strudel pattern code. |
 | **Browser console shows CORS errors** | The web app is not on `localhost:4321` (or wherever the API expects). The API has CORS open by default; check your reverse proxy rewrites if you've fronted it with one. |
+
+---
+
+## UI guide
+
+The interface has four regions. If you've used the Strudel REPL, the
+left and bottom areas will look familiar; the right panel and the
+multi-track UI are VibeRave-specific.
+
+```
+ ┌──────────────────────────────────────────────────────────────────────┐
+ │  ◐  VIBERAVE                                                         │  ← header (logo only)
+ ├────────────────────────────────────┬─────────────────────────────────┤
+ │  + New track  ■ Stop all  🗑 Clear │  [vibe] [api] [sounds] ...      │  ← tabs row
+ ├────────────────────────────────────┤▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│  ← cycle indicator (1px, scans per cycle)
+ │ ▶ ⚡ ● Track 1 ┃ABC┃ ▮▮▮ 🗑 │ Piano roll ▼  │                       │
+ │ ┌────────── viz canvas ─────────┐ │   (drag bottom edge to resize)  │
+ │ │ ▓▓▓▓ ▓▓▓ ▓▓▓▓▓ (per-track)   │ │                                 │
+ │ └───────────────────────────────┘ │     Vibe / API / Settings panel │
+ │ ▶ ⚡ ● Track 2 ┃ABC┃ ▮▮▮ 🗑 │ Scope ▼      │                       │
+ │ ┌─── viz canvas ───┐               │                                 │
+ │ │ ~~~~~~~~~~~~~    │               │                                 │
+ │ └──────────────────┘               │                                 │
+ ├────────────────────────────────────┤                                 │
+ │  </>  CODE · TRACK 1   ▼   ▶ APPLY │                                 │  ← collapsible code panel
+ │  // CodeMirror editor for selected track                              │
+ └──────────────────────────────────────────────────────────────────────┘
+```
+
+### Track row
+
+Each track has its own row with:
+
+| Element | Function |
+|---|---|
+| ▶ / ■ | Play / stop **just this track** (other tracks keep playing) |
+| ⚡ | **Spotlight** — fade other playing tracks down over ~1.5 s, leave only this one |
+| ● dot | Status: cyan glow + pulse = playing · magenta = LLM generating · grey = idle |
+| Name | Double-click to rename |
+| `ACTIVE` badge | Visible only on the selected track (yellow hazard-tape row) |
+| Level bar | 60 × 4 px deep-cyan bar — live RMS of this track's audio output |
+| 🗑 | Delete this track (asks confirmation) |
+| Viz dropdown | Top-right — pick the visualization style (see below) |
+
+Selected track gets a **yellow hazard-tape** background; unselected
+tracks have a subtle white card overlay so they don't blend into the
+dark theme.
+
+### Visualization modes
+
+11 per-track modes, all reading from the same per-track `AnalyserNode`.
+**Drag the bottom edge of the canvas** to resize a row's viz height
+(40–480 px, persisted per track). Square-shape modes don't resize.
+
+| Mode | Style | Best for |
+|---|---|---|
+| **Piano roll** | Strudel-native scrolling notes | Melodic patterns; drum-only loops show as a single bar |
+| **Waveform** | Scrolling peak history (~3 s) | Seeing dynamics over time |
+| **Spectrum** | Log-frequency spectrogram | Frequency content over time |
+| **Scope** *(default)* | 1024-sample triggered oscilloscope | Wave shape — clean for synths |
+| **Chromatic** | Scope with magenta / cyan offset (logo-style aberration) | Brand-flavoured demo |
+| **AM Bars** | 64 log-frequency bars, rainbow gradient | Classic spectrum analyser |
+| **AM Octaves** | 24 wider bars, magenta→cyan gradient | Less noisy than AM Bars on melodic content |
+| **AM LED** | 32 bars × 12 LED rows, Winamp-style | Retro club look |
+| **AM Mirror** | Bars symmetric around mid-line | Stereo-meter feel |
+| **AM Curve** | Smooth curve through 96 bars, gradient fill | Continuous flowing shape |
+| **AM Radial** | 64 coloured spokes from canvas centre (square) | Eye-catcher; needs the square slot |
+| **Spiral** | Strudel's radial cycle viz (square) | Cyclical structure |
+
+### Top of right panel: cycle indicator
+
+A 1 px magenta→cyan gradient bar at the top of the panel scans
+0% → 100% once per Strudel cycle, synced to the global clock. It
+freezes when nothing is playing. Toggle from
+**Settings → Vibe → Show cycle indicator bar**.
+
+### Vibe tab (right panel)
+
+The default tab — multimodal prompt entry plus a chat history.
+
+- **Push-to-talk button** — hold (or hold the configured key, default
+  Space) to record. Border + glow turn cyan; the glow size pulses with
+  your live mic level. Release to send. Configure the key in
+  **Settings → Vibe → Push-to-talk key**.
+- **Chip presets** — 10 one-click prompts above the textarea. Click
+  fills the textarea (does not auto-send) so you can edit before
+  sending.
+- **Auto-send after** — on PTT release, wait this long before firing
+  the LLM. **0 s** = instant send (no review window). 2-10 s gives
+  you time to read the transcript and override by typing (typing
+  cancels the timer).
+- **Command queue** — submit while a previous prompt is still
+  generating; prompts queue and fire in order. Drop one with × before
+  its turn.
+- **Code-flash** — when the LLM applies new code, the changed lines
+  in the open code editor briefly tint cyan with a 3 px diff-gutter
+  bar on the left, fading over 0.8 s.
+
+### API Settings tab
+
+BYO LLM + STT keys, base URLs, and models. Settings live in
+`localStorage` and travel as `x-llm-*` / `x-stt-*` headers per
+request — never persisted on the server. **Chinese-English mixed
+input** checkbox under STT enables bilingual bias prompts and
+`lang=auto` on transcribe calls. See [Backend matrix](#backend-matrix).
+
+### Differences from native Strudel
+
+If you're coming from strudel.cc, here's what's new:
+
+- **Multi-track** instead of one global editor — each track has its
+  own scheduler instance, viz canvas, level meter, and code state.
+- **Per-track viz** — every track shows its own analyser-driven viz;
+  no need to sprinkle `.scope()` / `.pianoroll()` in your code.
+- **Sync is always on** — `isSyncEnabled = true` at the editor level
+  regardless of the saved setting. Multiple tracks sharing one cycle
+  clock is a hard requirement, not a preference.
+- **Line wrapping is always on** — long method chains never overflow
+  horizontally.
+- **Right panel** carries the multimodal Vibe + API + Sounds + Settings
+  tabs that drive the LLM agent loop. The bottom code panel is a
+  collapsible CodeMirror editor for the selected track only.
+- **Cycle indicator + per-track level meter + drag-resizable viz** —
+  small live-coding ergonomics on top of the Strudel base.
 
 ---
 
