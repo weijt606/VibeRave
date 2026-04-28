@@ -111,8 +111,16 @@ export function TrackHeader({
   return (
     <div
       className={cx(
+        // Unselected headers use a literal-white overlay (theme-agnostic).
+        // `bg-foreground/N` doesn't compose into an alpha value when
+        // `foreground` is wired to `var(--foreground)` in tailwind config,
+        // so on dark themes the bg silently rendered invisible. White at
+        // 8% alpha shows up on any dark theme and is invisible on light
+        // (where the row contrast comes from the bg itself).
         'flex items-center gap-2 px-3 py-2 cursor-pointer select-none border-b border-muted',
-        isSelected ? 'bg-yellow-400 text-black' : 'hover:bg-lineHighlight/40',
+        isSelected
+          ? 'bg-yellow-400 text-black'
+          : 'bg-white/[0.08] hover:bg-white/[0.14]',
       )}
       onClick={onSelect}
     >

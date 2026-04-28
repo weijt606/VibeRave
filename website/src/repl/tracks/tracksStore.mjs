@@ -22,6 +22,10 @@ function normalizeTrack(t) {
     ...t,
     viz: validViz,
     volume: typeof t.volume === 'number' ? t.volume : 1,
+    // Per-track viz canvas height (CSS px). Drag-resizable via the
+    // grip handle on the canvas's bottom edge. Default 80 (matches
+    // the legacy global default before per-track storage existed).
+    vizHeight: typeof t.vizHeight === 'number' ? t.vizHeight : 80,
   };
 }
 
@@ -177,6 +181,10 @@ export function renameTrack(id, name) {
 
 export function setTrackViz(id, viz) {
   updateTrack(id, { viz });
+}
+
+export function setTrackVizHeight(id, vizHeight) {
+  updateTrack(id, { vizHeight });
 }
 
 export function getTrack(id) {
