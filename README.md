@@ -79,12 +79,22 @@ with no paid services.
   or `ollama` (local, no API key, runs on your laptop). Configure both from
   the in-app **API Settings** panel — no `.env` editing required.
 - **Multi-track** — independent tracks with per-track visualizers
-  (pianoroll / waveform / spectrum / scope / spiral); all share one global
-  cycle clock so beats align.
+  (**11 modes**: pianoroll / waveform / spectrum / scope / chromatic /
+  6 audioMotion-inspired bar viz / spiral). All tracks share one global
+  cycle clock so beats stay aligned. Each viz canvas is **drag-resizable
+  per track** (40-480 px), and the **per-track RMS level meter** shows
+  which row is making sound at a glance.
 - **Command queue** — submit while a previous prompt is still generating;
   prompts queue and fire in order. Drop one with × before its turn.
 - **Click-to-prompt chips** — 10 canonical commands above the input. Click
   fills the textarea (does not auto-send), so you can edit before sending.
+- **Configurable auto-send** — after a voice take lands, fire to the LLM
+  immediately (`0 s`, no review window) or wait 2-10 s for a chance to
+  override by typing. Set it from the api panel.
+- **Lite + full install profiles** — default `pnpm install` ships only
+  what VibeRave needs (~715 MB); `pnpm install:full` adds Csound,
+  TidalCycles, Gamepad / Motion / MQTT / Serial outputs, and the Tauri
+  desktop bridge (~1.1 GB). One command switches either way.
 - **Per-take metrics + stage dumps** (optional) — every voice take can be
   persisted as `raw.wav` + transcript + JSON metrics so you can A/B
   different STT backends offline.
@@ -135,6 +145,7 @@ with "lo-fi beat at 80 bpm" by voice, then type a precise iteration like
 | | Requirement |
 |---|---|
 | Runtime | **Node ≥ 20.6** &nbsp;·&nbsp; **pnpm ≥ 9** &nbsp;·&nbsp; Chrome / Edge / Firefox 118+ |
+| Disk | **~715 MB** for the lite install (default), **~1.1 GB** for the full install ([see profiles below](#choose-your-install-profile)) |
 | Hardware | A microphone — only required if you want voice input. Text input works on any device |
 | Account (pick one) | An API key from any OpenAI-compatible provider (free tiers exist for Groq, OpenAI, OpenRouter, Qwen, Gemini), **or** [Ollama](https://ollama.com/) running locally with a model pulled |
 
@@ -143,7 +154,7 @@ with "lo-fi beat at 80 bpm" by voice, then type a precise iteration like
 ```bash
 git clone https://github.com/weijt606/VibeRave.git
 cd VibeRave
-pnpm install                # ~715 MB — VibeRave's lite profile (default)
+pnpm install                # default: lite profile (~715 MB)
 cp .env.example .env        # leave the placeholders — config happens in-app
 pnpm dev
 ```
@@ -154,15 +165,23 @@ You should see two URLs in the terminal:
 [api]  Server listening at http://localhost:4322
 ```
 
-> **Lite vs full install.** The default `pnpm install` ships the **lite**
-> Strudel package set (~715 MB). It's everything VibeRave needs for
-> voice/text/chip → LLM → multi-track Strudel hot-swap. If you also want
-> the **advanced** features upstream Strudel ships — Csound audio engine,
-> TidalCycles `.tidal` import, Gamepad / Motion / MQTT / Serial outputs,
-> Tauri desktop bridge — run **`pnpm install:full`** instead (~1.1 GB,
-> adds the Java-based Closure compiler and Tree-sitter Haskell parser).
-> Switch back any time with **`pnpm install:lite`**. Both commands handle
-> everything for you — no code edits required.
+#### Choose your install profile
+
+| Profile | Command | Disk | What's included |
+|---|---|---|---|
+| 🪶 **Lite** *(default)* | `pnpm install` | **~715 MB** | Everything VibeRave needs: multimodal voice/text/chip input → LLM → multi-track Strudel hot-swap, all 11 visualisations, MIDI / OSC outputs, persistent sessions |
+| 🎛 **Full** *(complete Strudel)* | `pnpm install:full` | **~1.1 GB** | Lite + every upstream Strudel package: **Csound** audio engine (~280 MB Closure compiler), **TidalCycles** `.tidal` parser (~46 MB tree-sitter-haskell), **Gamepad / Motion / MQTT / Serial** I/O, **Tauri desktop bridge** |
+
+> **Pick lite if** you want voice/text/chip-driven Strudel livecoding — that's
+> ~95% of VibeRave use cases. **Pick full if** you want to write `csound("...")`
+> patterns, import `.tidal` files, drive a hardware MIDI rig over serial, or
+> hook a gamepad / phone gyroscope into your patterns.
+>
+> Switching is one command — no code edits, no manual file changes:
+> ```bash
+> pnpm install:full   # → swap to full
+> pnpm install:lite   # → swap back to lite (and reclaim ~385 MB)
+> ```
 
 ### 2. Configure your provider in the browser
 
@@ -185,6 +204,10 @@ pick whichever input mode feels right:
 2. The transcript appears in the textarea, auto-sends after ~2 seconds, the editor fills with Strudel code, the music starts playing.
 3. Hold Space again, say *"more reverb"*. The new pattern hot-swaps on the next cycle.
 
+> Want zero review delay? Set **auto-send after = 0s** in the api panel —
+> the LLM fires the moment STT returns. Want longer to override by typing
+> instead? Pick 5-10 s. Typing in the textarea cancels the pending timer.
+
 **Text** (typing):
 1. Click in the textarea, type *"lo-fi beat at 80 bpm"*, press <kbd>Enter</kbd>.
 2. Same agent loop, just no STT hop. Lower latency, perfect recognition.
@@ -194,6 +217,29 @@ pick whichever input mode feels right:
 2. Edit if you want, then press <kbd>Enter</kbd> or click **Send**.
 
 > Don't know what to say? Jump straight to the [Prompt cookbook](#prompt-cookbook) — it has session walkthroughs and one-liners for lo-fi, Berghain techno, jazz progressions, hyperpop, and more.
+
+**Things to watch as you play:**
+- **Cycle indicator bar** at the top of the right panel — 1 px gradient
+  scans 0% → 100% once per Strudel cycle. Tells you exactly when your
+  next edit will land.
+- **Track row status dot** — cyan + pulse = playing · pink = LLM
+  generating · grey = idle.
+- **Level meter** on each track header — 60 × 4 px deep-cyan bar shows
+  live RMS so you can see which track is currently making sound (or
+  silently broken).
+- **Code-flash** — when the LLM applies new code, the changed lines in
+  the open code editor briefly tint cyan with a 3 px diff-gutter bar
+  on the left. Open the bottom **Code** panel to see exactly what it
+  rewrote.
+
+**Stop / spotlight / clear:**
+- **Stop one track** — click the ▶/■ button on its row (other tracks
+  keep playing).
+- **Spotlight** ⚡ on a track row — fade the others over ~1.5 s, leave
+  only this one.
+- **Stop all** — header button at the top of the track column (panic
+  stop, all tracks).
+- **Clear all** 🗑 — wipes every track, asks for confirmation first.
 
 ### Switching STT backends later
 
@@ -230,6 +276,8 @@ to expand what VOSK will accept.
 | **No mic prompt / "Could not start recording"** | Browser blocked microphone access. Click the lock icon in the URL bar → allow Microphone. Reload. |
 | **Tracks drift / beats don't align** | Should not happen on `main` — sync is hard-coded on. If you see it, file an issue with browser + Strudel pattern code. |
 | **Browser console shows CORS errors** | The web app is not on `localhost:4321` (or wherever the API expects). The API has CORS open by default; check your reverse proxy rewrites if you've fronted it with one. |
+| **`csound("...")` / `.tidal` import / gamepad / serial / MQTT doesn't work** | These features ship in the **full** profile only. Run `pnpm install:full` to enable them. The lite profile loads pattern code referencing these packages without errors but the calls become no-ops. |
+| **`pnpm install` is failing with workspace errors after switching profiles** | The profile-swap scripts (`pnpm install:lite` / `:full`) handle this automatically. If you copied a YAML by hand and got it wrong, run `pnpm install:lite` to reset to a known-good state. |
 
 ---
 
@@ -338,12 +386,14 @@ input** checkbox under STT enables bilingual bias prompts and
 
 ### Differences from native Strudel
 
-If you're coming from strudel.cc, here's what's new:
+If you're coming from strudel.cc, here's what's new — and what's optional.
 
+**Always on (both lite and full):**
 - **Multi-track** instead of one global editor — each track has its
   own scheduler instance, viz canvas, level meter, and code state.
-- **Per-track viz** — every track shows its own analyser-driven viz;
-  no need to sprinkle `.scope()` / `.pianoroll()` in your code.
+- **Per-track viz** — every track shows its own analyser-driven viz
+  (11 modes); no need to sprinkle `.scope()` / `.pianoroll()` in
+  your code.
 - **Sync is always on** — `isSyncEnabled = true` at the editor level
   regardless of the saved setting. Multiple tracks sharing one cycle
   clock is a hard requirement, not a preference.
@@ -354,6 +404,19 @@ If you're coming from strudel.cc, here's what's new:
   collapsible CodeMirror editor for the selected track only.
 - **Cycle indicator + per-track level meter + drag-resizable viz** —
   small live-coding ergonomics on top of the Strudel base.
+
+**Lite-only (the default install):**
+- Skips the upstream Strudel packages VibeRave's voice/LLM pipeline
+  doesn't exercise — Csound, TidalCycles parser, Gamepad / Motion /
+  MQTT / Serial, Tauri desktop bridge.
+- Saves ~385 MB on disk + ~30 s on install.
+- Code referencing those packages still loads fine — `loadModules()`
+  guards each optional import and falls back to a no-op silently.
+
+**Need the upstream-Strudel feature set?** Run
+[`pnpm install:full`](#choose-your-install-profile). All upstream
+Strudel packages and pattern features become available immediately —
+no further changes needed.
 
 ---
 
