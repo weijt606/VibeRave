@@ -66,7 +66,21 @@ export async function getRandomTune() {
   return data;
 }
 
+// Optional dynamic import — resolves to a no-op module when the
+// requested package isn't installed (lite install profile). Lets us
+// list every Strudel workspace package below without forcing each one
+// onto the dependency tree. Required packages still use plain
+// `import()` so a real missing-dep bug surfaces loudly.
+function optionalImport(path) {
+  return import(/* @vite-ignore */ path).catch((err) => {
+    // eslint-disable-next-line no-console
+    console.info(`[loadModules] optional package not installed: ${path} (${err.message})`);
+    return {};
+  });
+}
+
 export function loadModules() {
+  // Required core — always present in both lite and full installs.
   let modules = [
     import('@strudel/core'),
     import('@strudel/draw'),
@@ -77,20 +91,22 @@ export function loadModules() {
     import('@strudel/webaudio'),
     import('@strudel/codemirror'),
     import('@strudel/hydra'),
-    import('@strudel/serial'),
     import('@strudel/soundfonts'),
-    import('@strudel/csound'),
-    import('@strudel/tidal'),
-    import('@strudel/gamepad'),
-    import('@strudel/motion'),
-    import('@strudel/mqtt'),
     import('@strudel/mondo'),
+    // Optional — only loaded if the matching workspace package is
+    // installed (see pnpm-workspace.full.yaml for the opt-in profile).
+    optionalImport('@strudel/serial'),
+    optionalImport('@strudel/csound'),
+    optionalImport('@strudel/tidal'),
+    optionalImport('@strudel/gamepad'),
+    optionalImport('@strudel/motion'),
+    optionalImport('@strudel/mqtt'),
   ];
   if (isTauri()) {
     modules = modules.concat([
-      import('@strudel/desktopbridge/loggerbridge.mjs'),
-      import('@strudel/desktopbridge/midibridge.mjs'),
-      import('@strudel/desktopbridge/oscbridge.mjs'),
+      optionalImport('@strudel/desktopbridge/loggerbridge.mjs'),
+      optionalImport('@strudel/desktopbridge/midibridge.mjs'),
+      optionalImport('@strudel/desktopbridge/oscbridge.mjs'),
     ]);
   } else {
     modules = modules.concat([import('@strudel/midi'), import('@strudel/osc')]);

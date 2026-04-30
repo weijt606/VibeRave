@@ -1,0 +1,29 @@
+# Canonical "full" profile — the complete Strudel monorepo. Adds the
+# advanced features the lite profile omits:
+#   • Csound audio engine (~280 MB closure-compiler chain)
+#   • TidalCycles import (~50 MB tree-sitter-haskell)
+#   • Gamepad / motion / MQTT / serial outputs
+#   • Tauri desktop bridge
+#   • All experimental Strudel packages
+# `pnpm install:full` copies this file to pnpm-workspace.yaml and runs
+# pnpm install. Run `pnpm install:lite` to revert.
+packages:
+  - packages/*
+  - services/*
+  - website/
+
+onlyBuiltDependencies:
+  - esbuild
+  - nx
+  - sharp
+  - tree-sitter
+  - tree-sitter-haskell
+
+catalog:
+  "@codemirror/commands": "^6.8.0"
+  "@codemirror/language": "^6.10.8"
+  "@codemirror/lang-javascript": "^6.2.2"
+  "@codemirror/state": "^6.5.1"
+  "@codemirror/view": "^6.36.2"
+  "@codemirror/autocomplete": "^6.18.4"
+  "@codemirror/search": "^6.5.8"

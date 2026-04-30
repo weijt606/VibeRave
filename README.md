@@ -143,7 +143,7 @@ with "lo-fi beat at 80 bpm" by voice, then type a precise iteration like
 ```bash
 git clone https://github.com/weijt606/VibeRave.git
 cd VibeRave
-pnpm install
+pnpm install                # ~715 MB — VibeRave's lite profile (default)
 cp .env.example .env        # leave the placeholders — config happens in-app
 pnpm dev
 ```
@@ -153,6 +153,16 @@ You should see two URLs in the terminal:
 [web]  http://localhost:4321/
 [api]  Server listening at http://localhost:4322
 ```
+
+> **Lite vs full install.** The default `pnpm install` ships the **lite**
+> Strudel package set (~715 MB). It's everything VibeRave needs for
+> voice/text/chip → LLM → multi-track Strudel hot-swap. If you also want
+> the **advanced** features upstream Strudel ships — Csound audio engine,
+> TidalCycles `.tidal` import, Gamepad / Motion / MQTT / Serial outputs,
+> Tauri desktop bridge — run **`pnpm install:full`** instead (~1.1 GB,
+> adds the Java-based Closure compiler and Tree-sitter Haskell parser).
+> Switch back any time with **`pnpm install:lite`**. Both commands handle
+> everything for you — no code edits required.
 
 ### 2. Configure your provider in the browser
 

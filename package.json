@@ -5,6 +5,8 @@
   "description": "VibeRave — multimodal live coding for Strudel. Speak it, type it, or click a chip preset. Pluggable STT (whisper / vosk / OpenAI-compat / DashScope) and LLM (any OpenAI-compat endpoint or Ollama).",
   "scripts": {
     "setup": "pnpm i",
+    "install:lite": "cp pnpm-workspace.lite.yaml pnpm-workspace.yaml && rm -rf node_modules website/node_modules services/api/node_modules packages/*/node_modules && pnpm install",
+    "install:full": "cp pnpm-workspace.full.yaml pnpm-workspace.yaml && rm -rf node_modules website/node_modules services/api/node_modules packages/*/node_modules && pnpm install",
     "pretest": "npm run jsdoc-json",
     "prebuild": "npm run jsdoc-json",
     "prestart": "npm run jsdoc-json",
