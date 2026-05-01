@@ -36,23 +36,34 @@ the fallback when iterating but the `<current>` block is empty.
 
 ## Slot-to-code mapping cheatsheet
 
+**Pick the row that matches the user's stated genre. Do NOT default to
+techno when the user said something else.** Order below is alphabetical,
+no genre is "preferred." Every row points at a verified template in
+`examples/genres.md`.
+
 | User said | Plug into |
 | --- | --- |
-| "lo-fi" | LinnDrum bank + slow + side-chain pad + small reverb |
-| "house" | RolandTR909 + 4-on-floor + acid bass with `lpf(sine.range(...))` + chord stab |
-| "techno" | RolandTR909 + `bd*4, [~ cp]*2, hh*8` + acid line + crush/distort |
-| "Berghain techno" | dedicated template — slower 130-138 BPM, dub-techno space, delay-drowned clap |
-| "minimal techno" | sparse `bd ~ ~ ~ bd ~ ~ ~`, mostly kick + ticks |
-| "ambient" | gm_pad_warm + long attack/release + room(0.9) + slow(4..8) |
+| "8-bit / chiptune" | square / triangle + `.crush(8)` |
 | "acid" | sawtooth + `.lpf(sine.range(200,2000))` + `.lpq(20)` |
-| "DnB" | breakbeat (`s("bd ~ ~ sd, hh*8?")` + `setcps(174/60/4)`) |
-| "jazz / chill" | gm_epiano2 + `.scale("...:minor7")` + .swing(4) |
-| "8-bit / chiptune" | square / triangle + .crush(8) |
-| "darker / brooding" | minor scale, lpf low, more reverb, slower |
-| "more energy" | fast(2), add hh*16 layer, raise lpf |
-| **chord names ("Cm7", "Am to F", "ii-V-I in C")** | `chord("<Cm7 ...>").voicing().anchor("c4")` — see `reference/tonal.md` and the "Jazz progression" template in `examples/genres.md` |
-| **mode names ("dorian", "phrygian", "lydian feel")** | `.mode("dorian")` instead of `.scale("X:minor")` |
-| **"harder bass" / "metallic" / "industrial"** | `.s("sine").fmh(2).fmi("<0 4 8 12>")` — FM synth, see Hard / industrial techno template |
+| "ambient" | gm_pad_warm + long attack/release + `room(0.9)` + `slow(4..8)` |
+| "Berghain techno" | dedicated template — 130-138 BPM, dub-techno space, delay-drowned clap |
+| "DnB" / "drum and bass" | breakbeat (`s("bd ~ ~ sd, hh*8?")` + `setcps(174/60/4)`) |
+| "drone / dark ambient" | sustained sub + slow filter sweeps + huge reverb tail |
+| "dub" | heavy `.delay()` / `.delaytime(.375)` / `.delayfeedback(.6)` + sparse drums + sub bass |
+| "funky / disco" | `gm_clavinet` / `gm_synth_strings_1` + 4-on-floor + chord stab + `.swing(4)` |
+| "house" | RolandTR909 + 4-on-floor + acid bass with `lpf(sine.range(...))` + chord stab |
+| "hyperpop / chiptune (fast bright)" | square + saw layered, fast `setcps`, vocoder vowel filter, breakbeats |
+| "IDM" | mutating breakbeats + `.degradeBy(0.2)` + `.struct(...)` + `.chunk(N, fn)` |
+| "jazz / chill" | gm_epiano2 + `.scale("...:minor7")` + `.swing(4)` + chord(...).voicing() |
+| "lo-fi" | LinnDrum bank + slow + side-chain pad + small reverb |
+| "minimal techno" | sparse `bd ~ ~ ~ bd ~ ~ ~`, mostly kick + ticks |
+| "techno" | RolandTR909 + `bd*4, [~ cp]*2, hh*8` + acid line + crush/distort |
+| "trap" | 808 sub + half-time `bd`, hi-hat rolls (`hh*16` with degrade), 140 BPM |
+| **chord names** ("Cm7", "Am to F", "ii-V-I in C") | `chord("<Cm7 ...>").voicing().anchor("c4")` — see `reference/tonal.md` and the "Jazz progression" template |
+| **mode names** ("dorian", "phrygian", "lydian feel") | `.mode("dorian")` instead of `.scale("X:minor")` |
+| **"darker / brooding"** | minor scale, low lpf, more reverb, slower setcps |
+| **"more energy"** | `.fast(2)`, add `hh*16` layer, raise lpf |
+| **"harder bass" / "metallic" / "industrial"** | `.s("sine").fmh(2).fmi("<0 4 8 12>")` — FM synth |
 | **"vocal-y" / "wow filter"** | `.vowel("<a e i o>")` on the lead/synth layer |
 
 ## Default safety values

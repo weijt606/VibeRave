@@ -33,12 +33,17 @@ stack(
 
 ## Techno (140 BPM)
 
+Per `rules/lushness.md`, every stack needs at least one atmospheric layer.
+Generic peak-time techno here has a delay-tailed chord stab — keeps the
+groove driving but stops the mix sounding 8-bit.
+
 ```js
 setcps(140/60/4)
 stack(
   s("bd*4, ~ ~ cp ~, hh*8").bank("RolandTR909").gain("1 .8 1 .8"),
   note("c2!4 c2 eb2 c2 g1").s("sawtooth").lpf(sine.range(300,3000).slow(8)).lpq(20).gain(0.65),
-  s("rim*4").bank("RolandTR909").gain(0.4).every(4, rev)
+  s("rim*4").bank("RolandTR909").gain(0.4).every(4, rev),
+  note("<[c4,eb4,g4] [bb3,d4,f4]>").s("gm_synth_strings_1").attack(0.1).release(0.6).delay(0.4).delaytime(0.375).delayfeedback(0.5).room(0.5).gain(0.35)
 )
 ```
 
@@ -61,13 +66,17 @@ stack(
 
 ## Minimal techno (130 BPM, sparse, lots of space)
 
+Even minimal needs a ghost pad to avoid the 8-bit dryness — kept at
+gain 0.25 so the groove stays sparse. Long room tail does the work.
+
 ```js
 setcps(130/60/4)
 stack(
   s("bd ~ ~ ~ bd ~ ~ ~").bank("RolandTR909").gain(0.95),
   s("~ ~ ~ rim ~ ~ rim ~").bank("RolandTR909").gain(0.5),
   s("~ hh ~ ~").bank("RolandTR909").gain(perlin.range(0.25, 0.5)),
-  note("c2 ~ ~ ~ ~ ~ eb2 ~").s("sawtooth").lpf(450).gain(0.55).release(0.18)
+  note("c2 ~ ~ ~ ~ ~ eb2 ~").s("sawtooth").lpf(450).gain(0.55).release(0.18),
+  note("<c3 ~ eb3 ~ g2 ~ ~ ~>").s("gm_pad_warm").attack(0.3).release(1).room(0.75).gain(0.25)
 )
 ```
 

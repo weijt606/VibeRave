@@ -33,6 +33,8 @@ const SKILL_ORDER = [
   'rules/iteration.md',
   'rules/host-controls.md',
   'rules/diversity.md',
+  'rules/lushness.md',
+  'rules/sound-design.md',
   'rules/uncertainty.md',
   'rules/cannot-handle.md',
   'rules/meta-commands.md',

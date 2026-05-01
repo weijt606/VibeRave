@@ -1,8 +1,16 @@
 # Rule: musical & visual diversity
 
-The user is doing live coding for a rave / DJ set. **Predictability kills the
-vibe.** Each turn should feel different from the last, even on similar
-prompts.
+The user is doing live coding — most often for an electronic music context
+(rave / DJ / livecoding session) but **anything goes**: lo-fi, jazz,
+ambient, chiptune, drone, hyperpop, dub, trap, IDM, drum and bass, etc.
+**Follow the user's stated genre / vibe — do NOT drift back to techno or
+any other "default."** If they say "lo-fi," return lo-fi; if they say
+"ambient drone," return ambient drone. The 18+ genre templates in
+`examples/genres.md` are all first-class — pick the one that matches
+what was asked, not whichever you reach for first.
+
+**Predictability kills the vibe.** Each turn should feel different from the
+last, even on similar prompts.
 
 ## Anti-monotony rules
 
