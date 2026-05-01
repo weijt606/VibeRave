@@ -41,24 +41,100 @@ const WAVEFORM_BARS = 18;
 // timer). 2s is short enough to feel responsive but long enough to react.
 const AUTO_SEND_DELAY_MS = 2000;
 
-// One-click prompt suggestions — appear as chips above the textarea so
-// the user has a deterministic fallback when STT is flaky. Click fills
-// the prompt textarea (does not auto-send), so they can still edit /
-// combine before hitting Send. Chosen mix: 4 generation seeds, 4 stem /
-// effect edits, 2 META commands. Keep this list short — anything past
-// ~10 chips fights the chat for vertical space.
+// Mutation chips — small prompt edits that act on whatever's already
+// playing. Click fills the textarea (does not auto-send) so the user
+// can edit before sending. META commands ("stop all", "open a new
+// track") deliberately not here — those have dedicated buttons on the
+// track column toolbar. Genre seeds belong in GENRE_OPTIONS below
+// (cleaner separation of "I want a NEW pattern" vs "tweak this one").
 const PROMPT_CHIPS = [
-  'lo-fi beat',
-  'Berghain techno',
-  'drum and bass',
-  'acid bass',
   'add hi-hat',
-  'add reverb',
+  'add clap',
+  'add bass',
+  'add pad',
+  'add melody',
+  'more reverb',
+  'add delay',
+  'sidechain pad',
+  'harder kick',
   'more bass',
-  'double drums',
-  'open a new track',
-  'stop all',
+  'less bass',
+  'darker',
+  'brighter',
+  'faster',
+  'slower',
+  'more energy',
+  'more space',
+  'glitch it',
 ];
+
+// Genre / style picker — click seeds the prompt with that genre.
+// 12 most-common electronic-music styles (project's centre of gravity)
+// plus jazz / lo-fi for non-club moods. Every entry maps to a verified
+// template in services/api/src/skills/strudel/examples/genres.md.
+const GENRE_OPTIONS = [
+  'lo-fi',
+  'house',
+  'deep house',
+  'techno',
+  'minimal techno',
+  'acid',
+  'drum and bass',
+  'dub',
+  'trap',
+  'IDM',
+  'ambient',
+  'jazz chill',
+];
+
+// Parse the current textarea into its compiled parts so multi-click
+// works as a "toggle" instead of a "replace". The on-wire format is:
+//   "<styleA + styleB>: <chipA, chipB, freeText>"
+// and we round-trip through this parser whenever a chip is clicked.
+function parseCompiledPrompt(text) {
+  const raw = String(text || '');
+  const colon = raw.indexOf(':');
+  if (colon === -1) {
+    // No colon — text is either all styles, all chips/free text, or empty.
+    const tokens = raw.split(/\s*\+\s*/).map((t) => t.trim()).filter(Boolean);
+    const allStyles = tokens.length > 0 && tokens.every((t) => GENRE_OPTIONS.includes(t));
+    if (allStyles) return { styles: tokens, chips: [], rest: '' };
+    // Treat as free text on the right side.
+    return parseRightSide(raw, []);
+  }
+  const left = raw.slice(0, colon);
+  const right = raw.slice(colon + 1).trim();
+  const styles = left.split(/\s*\+\s*/).map((t) => t.trim()).filter(Boolean);
+  return parseRightSide(right, styles);
+}
+function parseRightSide(rightRaw, styles) {
+  const tokens = String(rightRaw)
+    .split(/\s*,\s*/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const chips = [];
+  const restTokens = [];
+  for (const t of tokens) {
+    if (PROMPT_CHIPS.includes(t)) chips.push(t);
+    else restTokens.push(t);
+  }
+  return { styles, chips, rest: restTokens.join(', ') };
+}
+function compilePrompt({ styles, chips, rest }) {
+  const left = (styles || []).join(' + ');
+  const right = [...(chips || []), rest || '']
+    .map((s) => String(s || '').trim())
+    .filter(Boolean)
+    .join(', ');
+  if (left && right) return `${left}: ${right}`;
+  return left || right || '';
+}
+function toggleInSet(arr, item) {
+  const set = new Set(arr);
+  if (set.has(item)) set.delete(item);
+  else set.add(item);
+  return [...set];
+}
 
 // Re-export so existing settings UI that imports these from VibeTab keeps working.
 export { displayKey };
@@ -679,49 +755,132 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
             ))}
           </div>
         )}
-        <div
-          className="flex flex-wrap gap-1 mb-1.5"
-          title="Click a chip to fill the prompt — useful when STT is unreliable. You can still edit before sending."
-        >
-          {PROMPT_CHIPS.map((chip) => (
+        {/* Parse the current prompt into its style + chip + free-text parts
+            so multi-click toggles work and we can highlight what's already
+            in the prompt. Form on the wire: "styleA + styleB: chipA, chipB, freeText". */}
+        {(() => {
+          const parsed = parseCompiledPrompt(prompt);
+          const isStyleOn = (g) => parsed.styles.includes(g);
+          const isChipOn = (c) => parsed.chips.includes(c);
+          const toggleStyle = (g) => {
+            clearAutoSendTimer();
+            setPrompt(
+              compilePrompt({
+                ...parseCompiledPrompt(prompt),
+                styles: toggleInSet(parseCompiledPrompt(prompt).styles, g),
+              }),
+            );
+          };
+          const toggleChip = (c) => {
+            clearAutoSendTimer();
+            setPrompt(
+              compilePrompt({
+                ...parseCompiledPrompt(prompt),
+                chips: toggleInSet(parseCompiledPrompt(prompt).chips, c),
+              }),
+            );
+          };
+          return (
+            <>
+              {/* Style row — filled pills, cyan-deep tint. Multi-select. */}
+              <div
+                className="flex flex-wrap items-center gap-1 mb-1"
+                title="Click one or more genres to seed a NEW pattern. Click again to remove."
+              >
+                <span className="text-[10px] uppercase tracking-wider opacity-60 mr-1 font-mono">
+                  style
+                </span>
+                {GENRE_OPTIONS.map((genre) => {
+                  const on = isStyleOn(genre);
+                  return (
+                    <button
+                      key={genre}
+                      type="button"
+                      onClick={() => toggleStyle(genre)}
+                      className="px-2.5 py-1 text-[11px] font-semibold rounded-full transition-colors"
+                      style={{
+                        backgroundColor: on
+                          ? 'rgb(var(--vr-accent-cyan-rgb) / 0.85)'
+                          : 'rgb(var(--vr-accent-cyan-deep-rgb) / 0.18)',
+                        color: on ? '#0a1518' : 'rgb(var(--vr-accent-cyan-rgb) / 0.95)',
+                      }}
+                    >
+                      {genre}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Mutation chips — outlined tags. Multi-select. */}
+              <div
+                className="flex flex-wrap items-center gap-1 mb-1.5"
+                title="Click one or more chips to add small mutations. Click again to remove."
+              >
+                <span className="text-[10px] uppercase tracking-wider opacity-60 mr-1 font-mono">
+                  edit
+                </span>
+                {PROMPT_CHIPS.map((chip) => {
+                  const on = isChipOn(chip);
+                  return (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => toggleChip(chip)}
+                      className={
+                        'px-2 py-0.5 text-[11px] rounded border transition-colors ' +
+                        (on
+                          ? 'border-foreground bg-foreground/10 text-foreground font-medium'
+                          : 'border-muted text-foreground/70 hover:border-foreground/70 hover:text-foreground bg-transparent')
+                      }
+                    >
+                      {chip}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
+        <div className="relative">
+          <textarea
+            value={prompt}
+            onChange={(e) => {
+              // User edited — cancel any pending auto-send so the typed text
+              // isn't immediately blown away.
+              clearAutoSendTimer();
+              setPrompt(e.target.value);
+            }}
+            placeholder={
+              listening
+                ? pttHint
+                  ? `Recording… release ${displayKey(pttKey)} to send`
+                  : 'Recording… speak now'
+                : transcribing
+                  ? 'Transcribing…'
+                  : `Describe the change. Enter to send, Shift+Enter for newline. Hold ${displayKey(pttKey)} for push-to-talk.`
+            }
+            className="w-full min-h-[68px] p-2 pr-7 bg-background border border-muted rounded-md text-foreground resize-y focus:outline-none focus:border-foreground"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+                e.preventDefault();
+                send();
+              }
+            }}
+          />
+          {prompt && !listening && !transcribing && (
             <button
-              key={chip}
               type="button"
               onClick={() => {
                 clearAutoSendTimer();
-                setPrompt(chip);
+                setPrompt('');
               }}
-              className="px-2 py-0.5 text-xs rounded-full border border-muted text-foreground/80 hover:border-foreground hover:text-foreground bg-background/60 backdrop-blur-sm transition-colors"
+              title="Clear prompt + deselect all style/edit chips"
+              aria-label="Clear prompt"
+              className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded text-foreground/50 hover:text-foreground hover:bg-foreground/10 transition-colors text-base leading-none"
             >
-              {chip}
+              ×
             </button>
-          ))}
+          )}
         </div>
-        <textarea
-          value={prompt}
-          onChange={(e) => {
-            // User edited — cancel any pending auto-send so the typed text
-            // isn't immediately blown away.
-            clearAutoSendTimer();
-            setPrompt(e.target.value);
-          }}
-          placeholder={
-            listening
-              ? pttHint
-                ? `Recording… release ${displayKey(pttKey)} to send`
-                : 'Recording… speak now'
-              : transcribing
-                ? 'Transcribing…'
-                : `Describe the change. Enter to send, Shift+Enter for newline. Hold ${displayKey(pttKey)} for push-to-talk.`
-          }
-          className="w-full min-h-[68px] p-2 bg-background border border-muted rounded-md text-foreground resize-y focus:outline-none focus:border-foreground"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
-              e.preventDefault();
-              send();
-            }
-          }}
-        />
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-3 flex-wrap">
             <div
