@@ -30,6 +30,7 @@ onlyBuiltDependencies:
   - esbuild
   - nx
   - sharp
+  - vosk-koffi   # postinstall downloads libvosk.dylib for VOSK STT
 
 catalog:
   "@codemirror/commands": "^6.8.0"

@@ -18,6 +18,7 @@ onlyBuiltDependencies:
   - sharp
   - tree-sitter
   - tree-sitter-haskell
+  - vosk-koffi   # postinstall downloads libvosk.dylib for VOSK STT
 
 catalog:
   "@codemirror/commands": "^6.8.0"
