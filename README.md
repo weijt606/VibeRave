@@ -362,9 +362,18 @@ The default tab — multimodal prompt entry plus a chat history.
   Space) to record. Border + glow turn cyan; the glow size pulses with
   your live mic level. Release to send. Configure the key in
   **Settings → Vibe → Push-to-talk key**.
-- **Chip presets** — 10 one-click prompts above the textarea. Click
-  fills the textarea (does not auto-send) so you can edit before
-  sending.
+- **Style picker (top row)** — 12 filled cyan pills for the most-common
+  genres (`lo-fi`, `house`, `techno`, `acid`, `drum and bass`, `dub`,
+  `trap`, `IDM`, `ambient`, `jazz chill`, etc.). Click to toggle —
+  multi-select is allowed and styles always render at the front of the
+  prompt as `lo-fi + ambient: ...`.
+- **Edit chips (second row)** — 18 outlined tags for common mutations
+  (`add hi-hat`, `more reverb`, `harder kick`, `darker`, `brighter`,
+  `glitch it`, …). Multi-select is allowed; selected chips appear after
+  the styles, separated by commas. Free-typed text is preserved
+  alongside the chips.
+- **Clear (×) button** — top-right of the textarea; one click empties
+  the prompt and deselects every style + edit chip.
 - **Auto-send after** — on PTT release, wait this long before firing
   the LLM. **0 s** = instant send (no review window). 2-10 s gives
   you time to read the transcript and override by typing (typing
@@ -492,20 +501,35 @@ backend is one new file in `infrastructure/` plus a branch in
 ## Prompt cookbook
 
 What kinds of prompts produce what kinds of music? VibeRave is opinionated:
-the skill prompt that drives the LLM has 16 hand-tuned genre templates,
-explicit chord / mode / FM / vowel knowledge, and a mutation cheatsheet
-for common iteration commands. Use this section as a starting menu.
+the skill prompt that drives the LLM has 18 hand-tuned genre templates,
+explicit chord / mode / FM / vowel knowledge, lushness + sound-design
+rules that keep modern-electronic prompts from sounding 8-bit by accident,
+and a mutation cheatsheet for common iteration commands. Use this section
+as a starting menu.
+
+The on-wire prompt format compiled by the Vibe tab is:
+
+```
+<styleA + styleB + ...>: <chipA, chipB, ..., free text>
+```
+
+Both halves are optional — `lo-fi` alone, `add hi-hat, more reverb` alone,
+and `lo-fi + ambient: more reverb, slow it down` are all valid. The LLM
+treats the styles as the seed genre(s) and the right-hand side as edits
+applied on top.
 
 ### Vocabulary at a glance
 
 | Category | Phrases the system handles cleanly |
 |---|---|
 | **Genre / vibe** | `lo-fi beat at 80 bpm`, `Berghain techno`, `minimal techno`, `house at 120`, `drum and bass at 174`, `acid bass`, `ambient pad`, `dub at 76 bpm`, `trap, half-time`, `IDM broken beats`, `chiptune / 8-bit`, `hyperpop`, `dark drone`, `funky disco`, `jazzy chill at 90` |
+| **Style mixing** | `lo-fi + ambient`, `dub + minimal techno`, `house + jazz chill`, `acid + IDM` — combine two of the 12 style-picker genres for hybrid moods |
 | **Drums** | `add hi-hat`, `mute kick`, `more snare`, `double drums`, `swap drums for a 909 kit`, `swap to LinnDrum`, `harder kick` |
 | **Effects** | `add reverb`, `more delay`, `make it dubby`, `make it darker`, `more crush`, `add a phaser` |
 | **Stems / synths** | `more bass`, `deeper bass`, `harder bass` (FM), `bring back the lead`, `mute the pad`, `add an arp`, `vocal-y filter` (formant) |
 | **Harmony** | `Cm7 to Am7 to Fmaj7`, `play in dorian`, `phrygian feel`, `ii-V-I in C`, `darker / brooding` (minor + low lpf) |
 | **Energy** | `more energetic`, `more minimal`, `make it faster / slower`, `fast(2)`, `half-time` |
+| **Texture / granularity** | `more atmospheric`, `more lush`, `more space`, `warmer`, `vintage feel` (lush by default) — vs. `grittier`, `rawer`, `drier`, `8-bit`, `chiptune`, `NES-style`, `crush it` (must opt in; defaults steer away from these) |
 | **Transport** | `play`, `pause`, `stop all`, `restart`, `open a new track`, `kill it` |
 
 ### Session walkthroughs
@@ -544,6 +568,24 @@ for common iteration commands. Use this section as a starting menu.
 | 2 | *"more crush"* | Crush bit-depth drops to 4-5 |
 | 3 | *"vocal-y filter on the lead"* | `.vowel("<a e i o>")` cycling on the square lead |
 
+#### Style mixing (UI-driven)
+
+Click two style pills in the picker — they compile into the prompt as
+`<styleA + styleB>:`. The right-hand chips and free text apply on top.
+
+| Compiled prompt | What you hear |
+|---|---|
+| *`lo-fi + ambient: more reverb`* | Slow swing LinnDrum + Rhodes from lo-fi, but with a `gm_pad_warm` ghost layer (~0.25 gain, room 0.7) carrying the chord — atmospheric without losing the beat |
+| *`dub + minimal techno`* | 130 BPM minimal kit, but the chord stab gets `delay(0.5).delaytime(0.375).delayfeedback(0.65)` from the dub template — long echo trails over a sparse pulse |
+| *`house + jazz chill`* | 120 BPM four-on-the-floor, but chords use ii-V-I motion + `gm_epiano2` voicings instead of the usual house stab |
+| *`acid + IDM`* | 303-style `.lpf(sine.range(...)).lpq(15)` bass, but drum pattern uses broken `.struct("1 0 1 0 0 1 0 1")` instead of straight 4/4 |
+| *`techno + ambient: more space`* | 132 BPM kick + hat skeleton with a long-tail pad on top, room(0.85), most non-essential layers thinned out |
+
+The two genres are seeds, not equal halves — the LLM picks the rhythm
+backbone from one and the harmonic / atmospheric character from the
+other. If the result leans wrong, swap the order or add an explicit
+chip (e.g. `lo-fi + ambient: more bass` to anchor more lo-fi-ness).
+
 ### Single-shot one-liners
 
 Drop these into the textarea (or speak them) for instant results.
@@ -557,9 +599,14 @@ Drop these into the textarea (or speak them) for instant results.
 | *"ambient pad in c minor, slow, lots of reverb"* | Drone / dark ambient |
 | *"acid 303 bassline, lpf swept, lpq high"* | Acid |
 | *"trap at 140 half-time, 808 sub, hi-hat rolls"* | Trap |
-| *"chiptune in F major at 160 with crush"* | 8-bit |
+| *"chiptune in F major at 160 with crush"* | 8-bit (explicit) |
+| *"NES-style boss music in C minor at 150"* | 8-bit (explicit) — bare square + triangle, hard `.crush(8)` |
+| *"raw, gritty 8-bit punk in F at 170, no reverb"* | 8-bit (explicit) — opts out of all atmosphere |
 | *"phrygian techno at 138, minor feel"* | Modal techno |
 | *"jazz progression Cm7-Am7-Fmaj7-G7 with walking bass at 90"* | Modal jazz |
+| *"lush deep house at 122 with warm pad and side-chain"* | Atmospheric / lush — supersaw pad, gm_pad_warm, full ducking |
+| *"vintage warm techno at 132, tape feel, gentle saturation"* | Vintage — `.crush(13)` + `.shape(0.3)`, no harsh aliasing |
+| *"smooth ambient drone in c minor, deep reverb, slow filter sweep"* | Maximum atmosphere — single sweep, `room(0.9)` |
 
 ### Iteration patterns (when something is already playing)
 
@@ -577,6 +624,10 @@ iterations preserve whatever you don't ask to change.
 | *"every 4 bars flip the hihats"* | `.every(4, rev)` on the hh layer | everything else |
 | *"quieter overall"* | Outer `.gain(0.6)` or per-layer gain reductions | structure |
 | *"more energetic"* | `.fast(2)` somewhere, optional `hh*16` layer added | core idea |
+| *"more atmospheric / more lush"* | Reverb tail (`.room(0.7)`) + soft-attack pad layered in if missing | tempo, kit, structure |
+| *"warmer / vintage"* | `.crush(12-14)` + `.shape(0.3)` saturation; replaces bare saws with detuned supersaw stack | rhythm, harmony |
+| *"more 8-bit / chiptune-y"* | Hard `.crush(8)`, mono center-pan, drops reverb/delay, swaps gm voices for bare square/triangle | tempo, structure |
+| *"drier / rawer"* | Strips reverb + delay tails; tightens attacks | rhythm, kit |
 | *"strip everything except drums and bass"* | The chord/pad/lead `stack` items removed | drums, bass |
 
 ### Things the system will refuse politely
@@ -594,15 +645,25 @@ unchanged. Triggers:
 - **Voice is fastest** for short canned commands (`"more reverb"`, `"stop all"`).
 - **Typing is best** for precise tweaks the LLM might mis-interpret from
   speech: *"raise lpf to 1200 on the bass layer"* is much safer typed.
-- **Chips are first** for discovery — click one, edit if you want, send.
+- **Chips are first** for discovery — click style + edit chips, optionally
+  edit the compiled prompt, then send. Multi-select toggles, so a second
+  click on the same pill removes it.
+- **Modern-electronic by default** — the lushness + sound-design rules
+  steer generic prompts away from bare saws, mono mixes, and `.crush(8)`.
+  If you actually want chiptune, ask for it explicitly (`"8-bit"`,
+  `"chiptune"`, `"NES-style"`, `"crush it"`) — those keywords flip the
+  rule off.
 - **Multi-track sessions stay in beat** automatically (one global cycle
   clock). Open a new track at any time without disturbing the others.
 
-The 10 chips above the textarea mirror the most-used prompts. The skill
-prompts driving the LLM live in `services/api/src/skills/strudel/` —
-add new genre templates or mutation recipes there and the LLM picks
-them up on the next request (no restart needed; skill files are re-read
-per `/generate` call).
+Above the textarea: 12 style pills (cyan, multi-select) on top, 18
+edit chips (outlined, multi-select) below — they compile down to
+`<styles>: <chips, free text>` before sending. The × button on the
+textarea clears everything in one click. The skill prompts driving the
+LLM live in `services/api/src/skills/strudel/` (rules, reference,
+recipes, examples) — add new genre templates, mutation recipes, or
+sound-design rules there and the LLM picks them up on the next request
+(no restart needed; skill files are re-read per `/generate` call).
 
 ---
 
