@@ -18,7 +18,19 @@ the fallback when iterating but the `<current>` block is empty.
 
 3. **Fill in the slots** with verified function names (`reference/*`).
 
-4. **Sanity-check** before responding (full list lives in
+4. **Liveliness pass** — before shipping, verify the pattern would not
+   sound identical for 4 cycles in a row (`rules/variation.md`):
+   - At least one non-drum layer must have a cycle-level variation device
+     (`.every(N, fn)`, `.sometimes(fn)`, `.degradeBy(N)`, `.chunk(N, fn)`,
+     `.palindrome()`, or mini-notation alternation `<a b c>` covering ≥ 3 values).
+   - The bass must have melodic motion (alternation, scalar walk, octave
+     jump, or `.arp(...)`) — not the same single pitch repeating.
+   - The chord/pad layer must alternate ≥ 2 distinct chords across the loop.
+   - If the `stack(...)` has ≤ 3 layers and the genre isn't drone /
+     ambient / "just a bassline", add a 4th low-gain atmospheric layer
+     (ghost pad / counter-melody arp / sparkle).
+
+5. **Sanity-check** before responding (full list lives in
    `rules/output-format.md`):
    - Every `s("...")` references a sound in `reference/sounds.md`.
    - Every method exists per `reference/pattern-transforms.md` /
@@ -28,11 +40,11 @@ the fallback when iterating but the `<current>` block is empty.
    - **No `.scope()` / `.pianoroll()` / `.fscope()` / `.tscope()`** —
      the host renders the per-track viz on its own canvas.
 
-5. **Check host signals**: if the prompt includes `loop_count`, `time_limit`,
+6. **Check host signals**: if the prompt includes `loop_count`, `time_limit`,
    or `continue_style`, defer to `rules/host-controls.md` for behaviour. Do
    NOT bake those values into the code.
 
-6. **Output** following `rules/output-format.md` — code only.
+7. **Output** following `rules/output-format.md` — code only.
 
 ## Slot-to-code mapping cheatsheet
 
@@ -96,13 +108,23 @@ Output:
 ```js
 setcps(90/60/4)
 stack(
-  s("bd ~ ~ ~, ~ ~ sd ~, hh*8").bank("LinnDrum").gain("0.7 0.6 0.7 0.6"),
-  n("0 2 4 5".add("<0 7 5 -2>")).scale("C2:minor").s("gm_acoustic_bass").gain(0.7),
-  note("<[c3,eb3,g3,bb3] [f2,ab2,c3,eb3] [g2,bb2,d3,f3] [c3,eb3,g3,bb3]>").s("gm_epiano2").attack(0.05).release(0.6).room(0.4).gain(0.5)
+  s("bd ~ ~ ~, ~ ~ sd ~, hh*8").bank("LinnDrum").gain("0.7 0.6 0.7 0.6")
+    .sometimes(x => x.fast(2)),
+  n("0 2 4 5".add("<0 7 5 -2>")).scale("C2:minor").s("gm_acoustic_bass").gain(0.7)
+    .every(4, x => x.add(12)),
+  note("<[c3,eb3,g3,bb3] [f2,ab2,c3,eb3] [g2,bb2,d3,f3] [c3,eb3,g3,bb3]>")
+    .s("gm_epiano2").attack(0.05).release(0.6).room(0.4).gain(0.5)
+    .arp("<0 1 2 1 2 3>"),
+  note("<c5 eb5 g4 bb4>").s("gm_celesta").attack(0.2).release(0.6)
+    .gain(0.22).room(0.7).sometimes(rev)
 ).slow(2)
 ```
 
-No trailing `.scope()` — the host owns visualization.
+Note the **liveliness pass**: `.sometimes(fast(2))` on drums adds an
+occasional fill, `.every(4, x => x.add(12))` on bass jumps an octave
+every 4 cycles, `.arp(...)` walks the chord voicings within each chord,
+and a 4th `gm_celesta` sparkle layer keeps the high-end alive without
+crowding the mix. No trailing `.scope()` — the host owns visualization.
 
 ## Anti-patterns
 

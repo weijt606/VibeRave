@@ -58,9 +58,13 @@ setcps(132/60/4)
 stack(
   s("bd*4").bank("RolandTR909").gain(0.95),
   s("~ ~ cp ~").bank("RolandTR909").gain(0.55).delay(0.5).delaytime(0.375).delayfeedback(0.55).room(0.7),
-  s("~ hh ~ hh").bank("RolandTR909").gain(0.35),
-  note("c1!2 ~ c1 eb1").s("sine").gain(0.85).attack(0.005).release(0.3).lpf(180),
+  s("~ hh ~ hh").bank("RolandTR909").gain(0.35).sometimes(fast(2)),
+  note("c1!2 ~ c1 eb1").s("sine").gain(0.85).attack(0.005).release(0.3).lpf(180)
+    .every(8, x => x.add(12)),
   note("<c2 ~ eb2 ~ g1 ~ bb1 ~>").s("sawtooth").lpf(sine.range(220,900).slow(16)).lpq(14).gain(0.5)
+    .every(4, x => x.rev())
+    .sometimes(x => x.add(7)),
+  note("<c4 ~ ~ eb4 ~ ~ g3 ~>").s("gm_pad_warm").attack(0.4).release(1.2).room(0.8).gain(0.22)
 )
 ```
 
@@ -148,10 +152,16 @@ note("c2,g2,c3,eb3,g3")
 ```js
 setcps(90/60/4)
 stack(
-  s("bd ~ ~ ~, ~ ~ sd ~, hh*8").bank("LinnDrum").gain("0.8 0.6 0.8 0.6").swing(4),
-  n("0 2 4 5".add("<0 7 5 -2>")).scale("C2:minor").s("gm_acoustic_bass").gain(0.7),
+  s("bd ~ ~ ~, ~ ~ sd ~, hh*8").bank("LinnDrum").gain("0.8 0.6 0.8 0.6").swing(4)
+    .sometimes(x => x.fast(2)),
+  n("0 2 4 5".add("<0 7 5 -2>")).scale("C2:minor").s("gm_acoustic_bass").gain(0.7)
+    .every(4, x => x.add(12)),
   note("<[c3,eb3,g3,bb3] [f2,ab2,c3,eb3] [g2,bb2,d3,f3] [c3,eb3,g3,bb3]>")
     .s("gm_epiano2").attack(0.05).release(0.6).room(0.4).gain(0.5)
+    .arp("<0 1 2 1 2 3>"),
+  note("<c5 eb5 g4 bb4>").s("gm_celesta").attack(0.2).release(0.6)
+    .gain(0.22).room(0.7).delay(0.3).delaytime(0.375).delayfeedback(0.4)
+    .sometimes(rev)
 ).slow(2)
 ```
 

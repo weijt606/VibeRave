@@ -35,6 +35,7 @@ const SKILL_ORDER = [
   'rules/diversity.md',
   'rules/lushness.md',
   'rules/sound-design.md',
+  'rules/variation.md',
   'rules/uncertainty.md',
   'rules/cannot-handle.md',
   'rules/meta-commands.md',
