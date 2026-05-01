@@ -226,7 +226,11 @@ export const STT_PRESETS = [
     label: 'Qwen (DashScope native)',
     provider: 'dashscope',
     baseUrl: 'https://dashscope-intl.aliyuncs.com',
-    model: 'paraformer-v2',
+    // qwen3-asr-flash is the synchronous DashScope ASR model that works
+    // over our multimodal-generation REST adapter. The "-realtime"
+    // variants need WebSocket; paraformer-v2 / fun-asr use a different
+    // endpoint (audio/asr/transcription) with async task polling.
+    model: 'qwen3-asr-flash',
     keyHelp: 'https://bailian.console.aliyun.com/?apiKey=1',
     needsKey: true,
   },

@@ -83,6 +83,16 @@ export function createOpenAICompatibleStt({ apiKey, baseURL, model, language = '
     async transcribe(pcm, opts = {}) {
       const wav = Buffer.isBuffer(opts.wavBuffer) ? opts.wavBuffer : pcmToWav(pcm);
       const lang = opts.language || language;
+      // OpenAI Whisper / Groq Whisper / most clones expect ISO-639-1
+      // (`en`, `zh`, `de`, ...), NOT BCP-47 region codes (`en-US`,
+      // `zh-CN`, ...). Passing a region code typically returns 200 with
+      // `text: ""`, which the upstream code then treats as "no speech
+      // detected" and silently swallows. Strip the region suffix before
+      // forwarding. `auto` stays unset so the API auto-detects.
+      const apiLang =
+        lang && lang !== 'auto'
+          ? String(lang).split('-')[0].toLowerCase()
+          : null;
       // OpenAI's SDK expects a File-like object with a name + arrayBuffer.
       // The Web File API works fine here under modern Node (≥ 20).
       const file = new File([wav], 'voice.wav', { type: 'audio/wav' });
@@ -91,7 +101,7 @@ export function createOpenAICompatibleStt({ apiKey, baseURL, model, language = '
         response = await client.audio.transcriptions.create({
           file,
           model,
-          ...(lang && lang !== 'auto' ? { language: lang } : {}),
+          ...(apiLang ? { language: apiLang } : {}),
           // Domain biasing — see STT_BIAS_PROMPT_* comments at the top of
           // this file. Providers that ignore the field (a few Whisper-API
           // clones do) silently drop it; nothing breaks.

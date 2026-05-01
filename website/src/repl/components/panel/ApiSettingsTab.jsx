@@ -314,7 +314,7 @@ export function ApiSettingsTab() {
                 value={settings.sttModel}
                 onChange={setSttModel}
                 placeholder={
-                  settings.sttProvider === 'dashscope' ? 'paraformer-v2' : 'whisper-1'
+                  settings.sttProvider === 'dashscope' ? 'qwen3-asr-flash' : 'whisper-1'
                 }
               />
             </Field>
@@ -349,10 +349,18 @@ export function ApiSettingsTab() {
 
         {settings.sttProvider === 'dashscope' && (
           <p className="text-xs opacity-50 leading-snug border-l-2 border-muted pl-2">
-            Native DashScope ASR adapter — targets the multimodal-generation endpoint
-            (not the OpenAI-compat shim). Verified models: <code className="font-mono">paraformer-v2</code>,
-            <code className="font-mono"> qwen-audio-asr</code>, <code className="font-mono">fun-asr</code> (synchronous; for the
-            streaming <code className="font-mono">fun-asr-realtime</code> variant you&apos;d need a websocket adapter).
+            Native DashScope ASR adapter — targets the multimodal-generation
+            endpoint with inline base64 audio (not the OpenAI-compat shim).
+            <br />
+            <strong>Works:</strong> <code className="font-mono">qwen3-asr-flash</code>{' '}
+            (recommended, sync), <code className="font-mono">qwen-audio-asr</code>.
+            <br />
+            <strong>Doesn&apos;t work over this adapter:</strong>{' '}
+            <code className="font-mono">qwen3-asr-flash-realtime</code> /{' '}
+            <code className="font-mono">fun-asr-realtime</code> (WebSocket streaming),{' '}
+            <code className="font-mono">paraformer-v2</code> /{' '}
+            <code className="font-mono">fun-asr</code> (different endpoint{' '}
+            <code className="font-mono">audio/asr/transcription</code> with async task polling).
           </p>
         )}
 

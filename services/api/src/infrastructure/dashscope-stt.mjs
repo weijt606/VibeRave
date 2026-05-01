@@ -98,18 +98,48 @@ export function createDashScopeStt({ apiKey, baseURL, model, language = 'auto' }
         .join(' ');
 
       const dataUri = `data:audio/wav;base64,${wav.toString('base64')}`;
-      const body = {
-        model,
-        input: {
-          messages: [
-            {
-              role: 'user',
-              content: [{ audio: dataUri }, { text: promptText }],
+
+      // Two distinct DashScope body shapes share the multimodal-generation
+      // endpoint but expect different request structures:
+      //
+      //   • Pure ASR models (qwen3-asr, qwen3-asr-flash):
+      //     - user content holds ONLY {audio}, no {text} prompt
+      //     - system role with empty text is required
+      //     - parameters: {asr_options: {enable_itn}}
+      //     - the model rejects with "task 'asr' does not support this
+      //       input" if you stick a text prompt in user content.
+      //
+      //   • Multimodal audio models (qwen-audio-asr, qwen-audio-turbo):
+      //     - user content can mix {audio} + {text} (text = bias prompt)
+      //     - parameters: {result_format: 'message'}
+      //
+      // We dispatch on the model name prefix so DJ-vocabulary biasing
+      // still works on the multimodal models, while qwen3-asr-flash gets
+      // the clean shape it expects.
+      const isPureAsr = /^qwen3-asr/i.test(model);
+      const body = isPureAsr
+        ? {
+            model,
+            input: {
+              messages: [
+                { role: 'system', content: [{ text: '' }] },
+                { role: 'user', content: [{ audio: dataUri }] },
+              ],
             },
-          ],
-        },
-        parameters: { result_format: 'message' },
-      };
+            parameters: { asr_options: { enable_itn: false } },
+          }
+        : {
+            model,
+            input: {
+              messages: [
+                {
+                  role: 'user',
+                  content: [{ audio: dataUri }, { text: promptText }],
+                },
+              ],
+            },
+            parameters: { result_format: 'message' },
+          };
 
       let res;
       try {
@@ -147,21 +177,92 @@ export function createDashScopeStt({ apiKey, baseURL, model, language = 'auto' }
       }
 
       const j = await res.json();
-      // DashScope multimodal returns text in output.choices[0].message.content
-      // — the content is usually a single text part.
-      const choice = j?.output?.choices?.[0];
-      let text = '';
-      if (choice?.message?.content) {
-        const c = choice.message.content;
-        if (typeof c === 'string') text = c;
-        else if (Array.isArray(c)) {
-          text = c
-            .filter((p) => typeof p?.text === 'string')
-            .map((p) => p.text)
-            .join(' ');
-        }
+
+      // DashScope's async-task pattern: a 200 with ONLY `request_id` (no
+      // `output`) means the model accepted the audio but is computing the
+      // result on a different channel (WebSocket / polling /api/v1/tasks).
+      // qwen3-asr-flash-realtime, fun-asr-realtime, and other "-realtime"
+      // / "-streaming" models use this pattern. Our sync REST adapter can't
+      // handle them; throw a clear error so the user can switch model in
+      // the UI instead of seeing silently-empty output.
+      const onlyRequestId =
+        j && typeof j === 'object' && j.request_id && !j.output && !j.data;
+      if (onlyRequestId) {
+        const wrapped = new Error(
+          `DashScope model "${model}" returned an async task (request_id only, no transcript). ` +
+            `Likely cause: the model is streaming-only (uses WebSocket) or async-only (needs task polling). ` +
+            `Switch the STT Model field to "qwen3-asr-flash" or "qwen-audio-asr" — these are synchronous ` +
+            `and work over our REST adapter. Avoid "-realtime" / "-streaming" variants and the paraformer-* / ` +
+            `fun-asr models (different endpoint).`,
+        );
+        wrapped.status = 502;
+        wrapped.code = 'stt_model_unsupported';
+        throw wrapped;
       }
-      return { text: (text || '').trim() };
+
+      // DashScope's response shape varies by model family:
+      //   • paraformer-v2 / fun-asr (synchronous) → output.choices[0].message.content
+      //     (string, or array of {text} parts)
+      //   • qwen-audio-asr → same as above
+      //   • Some clones → output.text / output.transcript / data.text / etc.
+      // Try each in turn so we don't silently drop a valid transcript just
+      // because the response moved one field to the side.
+      const text = extractDashScopeText(j);
+
+      if (!text) {
+        // Empty response from a recognised shape — log full body for diagnosis.
+        // eslint-disable-next-line no-console
+        console.warn('[dashscope-stt] empty transcript', {
+          model,
+          responseStatus: res.status,
+          responseKeys: Object.keys(j || {}),
+          outputKeys: Object.keys(j?.output || {}),
+          rawResponse: JSON.stringify(j).slice(0, 800),
+        });
+      }
+
+      return { text: text.trim() };
     },
   };
+}
+
+// Defensive multi-shape extractor. DashScope has several response layouts
+// across model families and minor version bumps; this walks the common
+// ones in order so a transcript hidden one field over still gets picked up.
+function extractDashScopeText(j) {
+  if (!j) return '';
+  // Shape 1: classic multimodal-generation message.content (string OR array)
+  const choice = j?.output?.choices?.[0];
+  if (choice?.message?.content) {
+    const c = choice.message.content;
+    if (typeof c === 'string') return c;
+    if (Array.isArray(c)) {
+      const joined = c
+        .filter((p) => typeof p?.text === 'string')
+        .map((p) => p.text)
+        .join(' ');
+      if (joined) return joined;
+    }
+  }
+  // Shape 2: flat output.text (qwen3-asr-flash and similar)
+  if (typeof j?.output?.text === 'string' && j.output.text.length > 0) {
+    return j.output.text;
+  }
+  // Shape 3: output.transcript (some ASR-specific endpoints)
+  if (typeof j?.output?.transcript === 'string' && j.output.transcript.length > 0) {
+    return j.output.transcript;
+  }
+  // Shape 4: nested output.output (occasional double-wrap)
+  if (typeof j?.output?.output === 'string' && j.output.output.length > 0) {
+    return j.output.output;
+  }
+  // Shape 5: top-level data.text (rare, possible compatibility shim)
+  if (typeof j?.data?.text === 'string' && j.data.text.length > 0) {
+    return j.data.text;
+  }
+  // Shape 6: result_format='text' returns plain string at output.results[0].text
+  if (Array.isArray(j?.output?.results) && j.output.results[0]?.text) {
+    return j.output.results[0].text;
+  }
+  return '';
 }
