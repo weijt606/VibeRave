@@ -48,6 +48,7 @@ function parsePageNum(page) {
   return isNaN(page) ? 0 : page;
 }
 export function loadPublicPatterns(page) {
+  if (!supabase) return Promise.resolve({ data: [] });
   page = parsePageNum(page);
   const offset = page * patternQueryLimit;
   return supabase
@@ -59,6 +60,7 @@ export function loadPublicPatterns(page) {
 }
 
 export function loadFeaturedPatterns(page = 0) {
+  if (!supabase) return Promise.resolve({ data: [] });
   page = parsePageNum(page);
   const offset = page * patternQueryLimit;
   return supabase

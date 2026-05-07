@@ -58,8 +58,8 @@ export function wavToPcm16kMono(wavBuffer) {
 
 /**
  * Compute simple loudness + voice-activity metrics from a Float32 PCM signal.
- * These run in pure JS in milliseconds and are good enough for a hackathon
- * demo — they let you show "before vs after enhance" without a Python sidecar:
+ * Pure JS, runs in milliseconds — enough for "before vs after enhance"
+ * comparisons without pulling in a Python sidecar:
  *
  *  - rmsDb       overall RMS in dBFS (loudness)
  *  - peakDb      peak sample in dBFS (clipping check)
