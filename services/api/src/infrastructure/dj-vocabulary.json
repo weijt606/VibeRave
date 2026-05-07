@@ -1,7 +1,7 @@
 {
   "_meta": {
     "purpose": "DJ live-coding command vocabulary. Used by whisper-transcriber.mjs to build an STT initial_prompt for biasing, and (in the future) by post-process fuzzy match. Also serves as a reference for what commands the project expects to handle.",
-    "owner": "voice pipeline / hackathon"
+    "owner": "voice pipeline"
   },
   "transport_control": [
     "start",

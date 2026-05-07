@@ -8,11 +8,15 @@ import { createClient } from '@supabase/supabase-js';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { $featuredPatterns /* , loadDBPatterns */ } from '@src/user_pattern_utils.mjs';
 
-// Create a single supabase client for interacting with your database
-export const supabase = createClient(
-  'https://pidxdsxphlhzjnzmifth.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZHhkc3hwaGxoempuem1pZnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTYyMzA1NTYsImV4cCI6MTk3MTgwNjU1Nn0.bqlw7802fsWRnqU5BLYtmXk_k-D1VFmbkHMywWc15NM',
-);
+// Optional Supabase backend for short-link sharing + community pattern
+// lists. Disabled by default — set PUBLIC_SUPABASE_URL +
+// PUBLIC_SUPABASE_ANON_KEY in .env to point at your own project. When
+// unset, share() falls back to URL-hash links and pattern lookups
+// silently return empty.
+const SUPABASE_URL = import.meta.env?.PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env?.PUBLIC_SUPABASE_ANON_KEY;
+export const supabase =
+  SUPABASE_URL && SUPABASE_ANON_KEY ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 let dbLoaded;
 /* if (typeof window !== 'undefined') {
@@ -26,10 +30,11 @@ export async function initCode() {
     const hash = initialUrl.split('?')[1]?.split('#')?.[0]?.split('&')[0];
     const codeParam = window.location.href.split('#')[1] || '';
     if (codeParam) {
-      // looking like https://strudel.cc/#ImMzIGUzIg%3D%3D (hash length depends on code length)
+      // looking like https://example.com/#ImMzIGUzIg%3D%3D (hash length depends on code length)
       return hash2code(codeParam);
-    } else if (hash) {
-      // looking like https://strudel.cc/?J01s5i1J0200 (fixed hash length)
+    } else if (hash && supabase) {
+      // looking like https://example.com/?J01s5i1J0200 (fixed hash length) —
+      // only resolvable when a Supabase backend is configured.
       return supabase
         .from('code_v1')
         .select('code')
