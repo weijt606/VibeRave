@@ -1,43 +1,83 @@
-# Rule: lushness (avoid 8-bit dryness)
+# Rule: lushness (genre-aware atmosphere)
 
-Bare `sawtooth` / `square` / `triangle` oscillators + dry drums + no reverb
-= chiptune. Even on club genres (techno / house / trance), modern
-electronic music **always** has at least one of: a reverberant pad, a
-delay-tailed lead, a side-chained sub, or a stereo-spread layer. Without
-those the output sounds 8-bit, not electronic.
+Modern electronic music is often "lush" — reverb tails, delay returns,
+side-chained pads, slow filter sweeps. But not always. Trap should hit
+dry. Hard techno should be brutalist. IDM lives on close-mic'd grit.
+Footwork is mostly transients. **Forcing atmosphere onto every track
+is the #1 reason different genres start sounding the same.**
 
-## Hard requirement
+So: lushness is **genre-tiered**, not universal. Pick the tier that
+matches the user's stated vibe; only Tier A is required to ship a
+"lush" layer.
 
-Every generated `stack(...)` MUST include at least ONE of the following,
-on a layer that isn't drums:
+## Tier A — atmosphere required (one of the lushness devices below)
+
+Genres that lose their identity without atmospheric depth:
+
+- ambient / drone / dark ambient
+- dub / dub techno / deep house
+- lo-fi / chillhop / chill
+- jazz / chill jazz / smooth jazz / ballad
+- trance / progressive / shoegaze / vaporwave / dream-pop
+- trip-hop / downtempo
+
+For these, every `stack(...)` MUST include at least ONE of:
 
 1. **Reverb tail** — `.room(>= 0.4)` on a melodic / chord / pad layer.
 2. **Delay tail** — `.delay(>= 0.3).delaytime(0.25 | 0.375 | 0.5).delayfeedback(0.4–0.7)` on a chord stab or lead.
-3. **Side-chain ducking** — pad/sub layer with `.attack(0.005).release(0.5)` and gain modulated by kick (use the dub / Berghain template's structure).
-4. **Filter sweep modulation** — `.lpf(sine.range(low, high).slow(4..16))` on a melodic / pad layer (NOT the same one that already has reverb — diversity).
+3. **Side-chain ducking** — pad/sub with `.attack(0.005).release(0.5)`.
+4. **Filter sweep modulation** — `.lpf(sine.range(low, high).slow(4..16))` on a melodic / pad layer.
 
-For genres that traditionally feel "dry" (minimal techno, hard techno,
-chiptune-by-request), still include a subtle atmospheric layer — a
-**ghost pad** at low gain (0.2–0.3) with `.room(0.5)` works without
-breaking the genre identity. Don't be afraid to add a 4th layer to a
-3-layer template if the result sounds bare.
+## Tier B — DRY by default (do NOT auto-add atmosphere)
 
-## Soft preferences (use unless user contradicts)
+Genres whose identity is dryness, transient impact, or raw timbre.
+**Skip the ghost pad. Skip the reverb tail. Skip the delay return.**
+Add atmosphere only if the user explicitly asks ("more reverb", "lush",
+"atmospheric", "dubbier", "more space"):
 
-- **Pads / chord stabs** should default to soft attacks: `.attack(0.05–0.3).release(0.4–0.8)`.
-- **Synths beyond raw waveforms**: prefer `gm_synth_strings_1`, `gm_choir_aahs`, `gm_pad_warm`, `gm_epiano2`, `gm_celesta` for melodic layers when the genre allows. They already sound less chiptune than bare `sawtooth`.
-- **FM synthesis** (`.s("sine").fmh(N).fmi(M)`) gives a "metallic / industrial / bell" character that fights the chiptune feel for harder genres.
-- **Stereo width**: `.jux(rev)` or `.off(0.125, x => x.add(7))` on a non-drum layer adds depth at zero extra cost.
-- **Gentle saturation**: `.crush(8)` is too lo-fi for most genres; `.crush(12)` is barely audible warmth. Use `.shape(0.3)` or skip distortion entirely when going for "lush."
+- minimal techno / hard techno / industrial techno / gabber / hardcore
+- trap / drill / phonk / memphis
+- IDM / breakcore / footwork / juke
+- punk / raw / gritty / lofi-punk / no-wave
+- chiptune / 8-bit / NES-style (when user asked for it)
+- jersey club / baltimore club / dembow
+- garage / UK garage / 2-step (the dry transient kind)
 
-## When to skip atmosphere
+A Tier B track may still have **one** subtly reverbed transient (e.g.
+`.room(0.25)` on a clap or rim) — that's a percussion-design touch,
+not a "lushness layer." It does not break the dry feel.
 
-- **Chiptune / 8-bit** explicitly requested by user → keep it dry, that's the genre's identity.
-- **Drone** explicitly → reverb is mandatory but everything else can be sparse.
-- **First half of a build-up / drop sequence** in `arrange()` → first slice can be dry to make the wet drop hit harder.
+## Tier C — use judgment (most user prompts land here)
+
+Generic techno, house, hyperpop, DnB, jungle, funky disco, drum and
+bass, modal jazz, anything ambiguous. Default behaviour:
+
+- If the prompt mentions atmosphere words ("warm", "dreamy", "spacious",
+  "deep", "moody", "atmospheric", "underwater") → treat as Tier A.
+- If it mentions impact words ("hard", "raw", "punchy", "stripped",
+  "tight", "pumping", "club", "industrial") → treat as Tier B.
+- Otherwise: **one** atmospheric device is fine but not required.
+  Prefer a single delay return on the chord layer over a full ghost
+  pad — it's lighter and won't dominate the mix.
+
+## Key change from previous version
+
+Earlier versions said even minimal techno needs a "ghost pad at gain
+0.25 with room 0.5". **That rule is repealed.** Minimal techno's
+identity IS the empty space; filling it makes every minimal track
+sound like every dub track sound like every ambient track. If the
+user wants atmosphere on top of minimal, they'll ask.
+
+## Soft preferences (apply across all tiers)
+
+- **Pads / chord stabs** default to soft attacks: `.attack(0.05–0.3).release(0.4–0.8)`.
+- **Stereo width**: `.jux(rev)` or `.off(0.125, x => x.add(7))` on a non-drum layer is essentially free — applies even to Tier B.
+- **Gentle saturation**: `.crush(12)` is barely audible warmth. Use `.shape(0.3)` for soft drive when going for "lush."
+- **FM synthesis** (`.s("sine").fmh(N).fmi(M)`) gives industrial bite — fights chiptune for hard genres without needing reverb.
 
 ## Anti-patterns
 
-- ❌ `stack(s("bd*4"), note("...").s("sawtooth"))` — two dry layers, no atmosphere. Add a third with reverb.
+- ❌ Adding a `gm_pad_warm` ghost layer to a trap / minimal / IDM track the user didn't ask for atmosphere on
 - ❌ `room(0.9)` on EVERYTHING — the mix turns to mud. Pick ONE primary atmospheric layer.
-- ❌ Using `gm_synth_strings_1` for the bass — wrong frequency band, sounds gauzy. Strings are for chord/pad layers.
+- ❌ Using `gm_synth_strings_1` for the bass — wrong frequency band, sounds gauzy.
+- ❌ A Tier A genre (ambient / dub / lo-fi) with no atmospheric layer at all — that's the one case the old "every stack needs lush" rule still applies.

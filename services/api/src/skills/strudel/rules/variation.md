@@ -57,19 +57,44 @@ A chord layer can also satisfy this with `.arp("...")` to vary the
 voicing within a single chord, but mini-notation alternation is the
 default.
 
-## Hard rule: minimum 4 layers (in `stack(...)`)
+## Layer count — genre-aware minimums
 
-A 3-layer `stack(...)` (drums, bass, chord) sounds bare on most
-genres. Add at least ONE atmospheric / texture layer:
+The previous version of this rule said "≥4 layers, period." That
+flattened every genre's density toward the same medium-busy texture.
+Trap and minimal techno *should* feel sparse; ambient *should* feel
+huge; hyperpop *should* feel maximalist. Pick the row that matches:
 
-- A ghost pad at low gain (0.2–0.3) with `room(0.6+)` — easy win
+| Genre family | Minimum layers in `stack(...)` | Notes |
+|---|---|---|
+| ambient / drone | **2** is fine, often 1 | Single drone with filter sweep is a complete piece |
+| trap / drill / phonk | **3** | bd + snare + 808 sub is the canonical sound; do NOT add a pad unless asked |
+| minimal techno / dub techno | **3** | kick + percussion + bass; the SPACE is the texture |
+| dub | **3–4** | sparse drums + bass + heavily delayed chord; the delay return is the 4th "layer" |
+| IDM / breakcore / footwork | **3** | broken drums + bass + one melodic mutation; over-layering kills the glitch character |
+| chiptune / 8-bit (by request) | **3** | drums + bass + lead, all square/triangle, no pad |
+| punk / raw / gritty | **3** | drier the better |
+| trance / progressive / deep house | **5+** | the genre IS the maximalism |
+| ambient (lush layered) | **4–5** | pads on pads on pads |
+| hyperpop / maximal pop | **5+** | density is the point |
+| house / techno / DnB / jungle / funky / disco | **4** | classic four-layer club track |
+| lo-fi / jazz / chill | **4** | drums + bass + chord + sparkle/celesta |
+| **everything else (default)** | **4** | when in doubt, four layers |
+
+**Don't pad a genre out of its identity.** A 3-layer trap track is
+correct; making it a 4-layer trap track by adding a `gm_pad_warm`
+ghost layer is wrong.
+
+## Adding a 4th+ layer (when the genre actually wants it)
+
+- A ghost pad at low gain (0.2–0.3) with `room(0.6+)` — for Tier A genres only
 - A counter-melody arp on `triangle` / `gm_celesta` an octave above
 - A sub layer beneath the bass for low-end weight
 - A high-shelf sparkle (`gm_celesta` / `gm_glockenspiel` at gain 0.2)
+- A percussion seasoning layer (rim / shaker / tambourine)
+- A vocal-chop layer on `gm_choir_aahs` with vowel filter
 
-Exceptions where 3 layers are fine:
-- Drone / ambient pieces (often 1–2 layers by design)
-- Single-instrument exercises explicitly requested ("just a bassline")
+For genres that need 5+, *vary the type* — don't stack three different
+pads. Mix: rhythm + harmony + texture + atmosphere + sparkle.
 
 ## Soft preferences
 
