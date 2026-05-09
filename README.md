@@ -501,11 +501,13 @@ backend is one new file in `infrastructure/` plus a branch in
 ## Prompt cookbook
 
 What kinds of prompts produce what kinds of music? VibeRave is opinionated:
-the skill prompt that drives the LLM has 18 hand-tuned genre templates,
-explicit chord / mode / FM / vowel knowledge, lushness + sound-design
-rules that keep modern-electronic prompts from sounding 8-bit by accident,
-and a mutation cheatsheet for common iteration commands. Use this section
-as a starting menu.
+the skill prompt that drives the LLM has 18 hand-tuned genre templates +
+5 complex level-4/5 reference patterns (including the eddyflux
+"coastline" benchmark), explicit chord / mode / FM / vowel knowledge,
+genre-aware lushness rules so trap stays dry while ambient stays huge,
+a 1–5 **complexity dial** triggered by EN+ZH keywords, and a mutation
+cheatsheet for common iteration commands. Use this section as a
+starting menu.
 
 The on-wire prompt format compiled by the Vibe tab is:
 
@@ -530,7 +532,128 @@ applied on top.
 | **Harmony** | `Cm7 to Am7 to Fmaj7`, `play in dorian`, `phrygian feel`, `ii-V-I in C`, `darker / brooding` (minor + low lpf) |
 | **Energy** | `more energetic`, `more minimal`, `make it faster / slower`, `fast(2)`, `half-time` |
 | **Texture / granularity** | `more atmospheric`, `more lush`, `more space`, `warmer`, `vintage feel` (lush by default) — vs. `grittier`, `rawer`, `drier`, `8-bit`, `chiptune`, `NES-style`, `crush it` (must opt in; defaults steer away from these) |
+| **Complexity** | `complex`, `layered`, `rich`, `dense`, `intricate`, `polyphonic`, `polyrhythmic`, `sophisticated`, `maximalist`, `复杂`, `丰富`, `有层次`, `密集`, `立体`, `饱满` — pushes to level 4–5 (nested stacks, polyrhythm, voice leading). Inverse: `minimal`, `sparse`, `stripped`, `极简`, `简单` |
 | **Transport** | `play`, `pause`, `stop all`, `restart`, `open a new track`, `kill it` |
+
+### By occasion / mood
+
+Not every session is a Berghain set. Pick the row that matches the
+room you're in. These prompts steer the LLM toward warmer, slower,
+or more atmospheric defaults — all use Tier A lushness rules so they
+breathe properly.
+
+#### Cafe / coffee shop (warm, jazzy, conversational background)
+
+| Prompt | What you get |
+|---|---|
+| *"lo-fi hip-hop at 80 with rhodes chords and rain"* | LinnDrum brushed kit + Rhodes + saw bass + small room |
+| *"bossa nova jazz at 110, brushed drums, walking bass"* | `swing(4)`, `gm_acoustic_bass` walking, `gm_epiano2` chords |
+| *"neo-soul groove at 95, 7th chords, gentle swing"* | `Cm9 Fm9 Bb7 Ebmaj7` voicings, soft kick, jazzy hat |
+| *"smooth jazz in dorian at 90, walking bass, gentle pad"* | `chord(...).voicing()` + `gm_acoustic_bass` walk + low-gain `gm_pad_warm` |
+| *"city pop at 105, slap bass feel, 80s warmth"* | `gm_electric_bass_finger` + `gm_pad_warm` + `.crush(13)` for tape feel |
+| *"chill bossa with vibraphone at 100"* | `gm_vibraphone` melody + brushed drums + walking bass |
+
+#### Study / focus (predictable, low-stimulation, gentle motion)
+
+| Prompt | What you get |
+|---|---|
+| *"ambient drone in c minor, slow filter sweep, lots of reverb"* | Single chord tone with `perlin` LPF + `room(0.95)` |
+| *"minimal piano in d minor, slow, sparse"* | `gm_grand_piano` with soft attack, `.slow(4)`, no surprise transforms |
+| *"lo-fi study beat at 75, no surprises, predictable loop"* | LinnDrum brushed + Rhodes + saw bass, no `.sometimes()` |
+| *"tape-loop ambient in c lydian, slow filter movement"* | `gm_pad_warm` + `.crush(12)` warmth + `.lpf(perlin.range(...).slow(32))` |
+| *"generative ambient in c phrygian, evolving slowly"* | `irand` walk through chord tones, multiple slow LFOs |
+| *"erik satie style minimal piano in g minor"* | `gm_grand_piano`, single melodic line, `.slow(3)`, sparse left hand |
+
+#### Party / gathering (warm, danceable, never too dark)
+
+| Prompt | What you get |
+|---|---|
+| *"funky disco at 118 with slap bass and brass stabs"* | `gm_brass_section` + `gm_electric_bass_finger` + 4-on-floor + `.swing(4)` |
+| *"nu-disco at 115, side-chain feel, italo-style chord stabs"* | Sawtooth bass + `gm_synth_strings_1` stabs + sidechain envelope |
+| *"deep house at 122 with warm pad and 7th chords"* | `gm_pad_warm` + `chord("<Cm7 Fm7 ...>").voicing()` + sidechain pad |
+| *"afrobeat at 110 with conga, kalimba, electric piano"* | `gm_marimba` / `gm_kalimba` + `gm_epiano2` + percussive groove |
+| *"feel-good house at 120 with vocal-y filter"* | `gm_synth_strings_1` chord stab + `.vowel("<a e i o>")` |
+| *"funky boogie at 108 with synth bass and clavinet"* | `gm_clavinet` + sawtooth synth bass + `.swing(4)` |
+
+#### Atmospheric / cinematic (wide, evolving, suspends time)
+
+| Prompt | What you get |
+|---|---|
+| *"dark cinematic ambient in c phrygian with slow filter sweep"* | Sawtooth drone + `perlin.range(200,1200).slow(32)` LPF + `room(0.95)` |
+| *"dub techno at 100, deep delays, sparse drums"* | `bd ~ ~ ~` + heavy `delay(0.6).delaytime(0.375).delayfeedback(0.65)` on chord |
+| *"vaporwave at 90, slowed jazz chords, tape warmth"* | `chord(...).voicing()` + `.crush(13)` + `.slow(2)` |
+| *"trip-hop at 88, dusty drums, melancholy 7th chords"* | `AkaiMPC60` broken kit + minor 7th progression + `.crush(13)` |
+| *"downtempo cinematic in d minor, breathing pads"* | `gm_choir_aahs` + slow attack/release + `.lpf(sine.range(...).slow(24))` |
+| *"shoegaze pad in g lydian, washed out, layered"* | Detuned 5-osc supersaw + `room(0.9)` + `.phaser(2)` |
+
+> **Tip:** all four occasions support the complexity dial. Add
+> *"layered"* / *"complex"* / *"丰富"* to push any of these to level 4–5
+> — e.g. *"complex chill bossa with vibraphone, voice-led 9th chords,
+> chunked arpeggio at 100"* gives you a richly orchestrated cafe track.
+
+### Complexity dial — orchestrating richer tracks
+
+Plain genre prompts default to **level 3** (rich: 4–5 layers, voice
+leading, polyrhythmic hat). Add a complexity keyword to unlock more.
+
+| Level | What you'll hear | Trigger words (EN + ZH) |
+|---|---|---|
+| **1** | 1–2 layers, single motion device, single chord | *minimal, sparse, stripped, raw, naked, 极简, 简单* |
+| **2** | 3–4 layers, 1–2 variation devices, 2-chord alt | *bare, simple, classic-skeleton* (rare — most prompts go ≥ 3) |
+| **3** *(default)* | 4–5 layers, polyrhythmic hat, 4-chord progression, counter-bass | (no keyword needed) |
+| **4** | 5–6 layers, voice-led extended chords, polyrhythm, probabilistic mutation, ONE sound-design move | *complex, layered, rich, dense, intricate, polyphonic, polyrhythmic, sophisticated, 复杂, 丰富, 有层次, 密集, 立体, 饱满* |
+| **5** | 6+ layers, multi-section `arrange()`, polymeter, nested transforms, multiple sound-design moves | *maximalist, baroque, IDM-density, hyperpop-density, kitchen-sink, 极致, 满, 最大化* |
+
+**The keywords stack with the genre.** Level-4 trap is still trap (no
+auto pad) — it gets density through hi-hat polyrhythm, 808 pitch
+movement, and a counter-melodic stab layer. Level-4 minimal techno is
+still minimal — it gets polymetric percussion, slowly-evolving filter
+sweeps on the bass, and chord motion on a ghost layer (allowed at
+level 4 because the user asked).
+
+#### What unlocks at level 4–5
+
+Beyond just "more layers," level 4–5 unlocks compositional techniques
+the simple templates don't reach for:
+
+- **Nested `stack(...)`** — drum sub-group with bank applied to all 4 percussion lines, then a master mask gates whole sections in/out
+- **`.late("[0 .01]*4")` master groove tail** — humanizing micro-swing that gives the mix its "produced" feel
+- **`.mask("<...>/16")` sectional gating** — layers fade in/out across 16-cycle blocks so the loop has macro-structure
+- **`chord(...).dict('ireal').voicing()`** — jazz-rich extended voicings (9ths, 11ths, sus4) instead of bare triads
+- **`.set(chords)` for inherited voice leading** — bass automatically follows the chord progression's roots
+- **`sine.range(low, high).slow(N)` continuous modulation** on `.fm`, `.lpf`, `.gain` simultaneously — three modulators routed to three params
+- **Polymeter** — one layer in 7/8 or `slow(3)` against a 4-cycle base, creating phase interplay that "never quite repeats"
+- **Probabilistic transforms** — `.rarely(ply(2))`, `.chunk(4, fast(2))`, `.degradeBy(0.15)` for unpredictability
+- **Granular processing** — `.segment(4).clip(rand.range(0.4, 0.8))` for IDM-style micro-loops
+
+#### Prompts that produce coastline-level richness
+
+The skill ships with the eddyflux ["coastline"](https://strudel.cc) pattern
+as its level-5 reference. To get close to that quality:
+
+| Prompt | What you get |
+|---|---|
+| *"complex deep house at 122 with rich layers and voice-led 9th chords"* | Nested drum stack, `chord("<Cm9 Fm11 Bb7sus Ebmaj9>").dict('ireal').voicing()`, polyrhythmic hats, supersaw chord pad, masked counter-melody |
+| *"layered IDM, polyrhythmic, intricate, chunked breakbeats"* | Broken drums with `.chunk(4, fast(2)).sometimes(rev)`, bass with `.fmi(sine.range(2,12).slow(11))`, 7-against-3-against-5 phase interplay |
+| *"dense ambient drone, evolving, breathing, c minor"* | 5-osc detuned supersaw drone bed, slow phaser on pad, random walk through chord tones, masked sub pulse, sparse air sparkle |
+| *"sophisticated jazz-techno at 130, polyrhythmic, with phaser and chunked arpeggio"* | Coastline-style: chord dict, segmented arp with FM modulation, granular clip, 9th voicings |
+| *"复杂的 deep house, 有层次, voice leading"* | Same as English — Chinese keywords trigger the same level-4 logic |
+| *"give me a coastline-style chill house at 70 bpm with 9th chords and chunked arpeggio"* | Direct reference to the canonical example — should produce the closest match to the eddyflux output |
+
+#### Iteration to ratchet complexity up or down
+
+Already have something playing? Push the dial:
+
+| You say | What changes |
+|---|---|
+| *"make it more complex"* / *"more layers"* / *"加点层次"* | +1 level: adds polyrhythmic perc, counter-melody, or modulation route |
+| *"add voice leading"* / *"jazzier chords"* | Swaps bare `note("[c3,eb3,g3]")` for `chord("<...>").dict('ireal').voicing()` |
+| *"add a polyrhythmic hat"* | Inserts `s("hh*16").struct("1 0 1 1 0 1 0 1...")` |
+| *"add modulation routing"* | Continuous `sine.range().slow()` on filter / FM / gain on existing layers |
+| *"chunked arpeggio"* | Wraps a melodic layer in `.segment(4).chunk(4, fast(2))` |
+| *"sectional gating"* | Adds `.mask("<0 1 1 1>/16")` so layers cycle in/out across 16 bars |
+| *"groove tail"* / *"humanize the timing"* | Appends `.late("[0 .01]*4").late("[0 .01]*2")` to the outer `stack` |
+| *"strip it down"* / *"make it minimal"* / *"简化"* | −1 or −2 levels: removes counter-melody, sparkle, ghost pad |
 
 ### Session walkthroughs
 
@@ -567,6 +690,21 @@ applied on top.
 | 1 | *"hyperpop at one sixty bpm"* | 160 BPM, square lead, triangle bass, F major, `.crush(8)` on the master |
 | 2 | *"more crush"* | Crush bit-depth drops to 4-5 |
 | 3 | *"vocal-y filter on the lead"* | `.vowel("<a e i o>")` cycling on the square lead |
+
+#### Building complexity from scratch (4 turns)
+
+Same prompt, ratcheting the complexity dial each turn. Useful for
+demos where you want to show density evolving live.
+
+| Turn | Prompt | What you hear |
+|---|---|---|
+| 1 | *"deep house at 122"* | Level 3 default — 4-5 layers, polyrhythmic hat, voice-led 4-chord progression |
+| 2 | *"make it more complex, add chunked arpeggio"* | Adds a 5th `chord(...).dict('ireal').voicing()` layer with `.segment(4).chunk(4, fast(2))` and `.fm(sine.range(...).slow(8))` modulation |
+| 3 | *"sectional gating, 16-bar mask"* | Wraps the chord + counter-melody in `.mask("<0 1 1 1>/16")` so they cycle in/out across the loop instead of repeating every cycle |
+| 4 | *"groove tail and stereo size"* | Appends `.late("[0 .01]*4").late("[0 .01]*2").size(4)` to the outer `stack` — humanized timing + wider stereo image, the eddyflux "coastline" finishing touch |
+
+By turn 4 you've gone from a clean 4-layer house track to a level-5
+maximalist arrangement with everything the skill knows how to do.
 
 #### Style mixing (UI-driven)
 
