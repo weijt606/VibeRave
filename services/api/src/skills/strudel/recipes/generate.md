@@ -5,30 +5,44 @@ the fallback when iterating but the `<current>` block is empty.
 
 ## Procedure
 
-1. **Parse intent** into 1–4 of these slots:
+1. **Parse intent** into 1–5 of these slots:
    - **Genre / vibe**: lo-fi, house, techno, ambient, acid, dnb, jazz, drone…
    - **Tempo**: explicit BPM if mentioned, else skip `setcps`.
    - **Drums**: kit choice (`.bank(...)`), groove (4-on-floor, breakbeat, syncopated).
    - **Bass**: shape (sub, acid, plucky), pitch (e.g. C minor).
    - **Melody / chords**: instrument + key + rhythm.
    - **FX / texture**: reverb, delay, filter movement, sidechain.
+   - **Complexity** (per `rules/complexity.md`): scan prompt for
+     keywords. **Default is level 3 (rich), not level 2.** Push to 4–5
+     on: complex / layered / rich / dense / intricate / polyphonic /
+     polyrhythmic / sophisticated / 复杂 / 丰富 / 有层次 / 密集 / 立体 /
+     饱满. Drop to 1–2 on: minimal / sparse / stripped / 极简 / 简单.
 
-2. **Pick a structural template** from `examples/genres.md` (or `examples/techniques.md`).
+2. **Pick a structural template**:
+   - Levels 1–3 → `examples/genres.md` (the simple, ship-ready templates).
+   - Levels 4–5 → `examples/complex.md` (nested stacks, polyrhythm,
+     `.late()` micro-timing, `.mask()` gating, `chord(...).dict('ireal')`,
+     `.set(chords)` for voice leading, modulated `.fm`/`.lpf`).
    Don't reinvent the structure — these templates are battle-tested.
 
 3. **Fill in the slots** with verified function names (`reference/*`).
 
 4. **Liveliness pass** — before shipping, verify the pattern would not
-   sound identical for 4 cycles in a row (`rules/variation.md`):
+   sound identical for 4 cycles in a row (`rules/variation.md` for the
+   layer-count floor, `rules/complexity.md` for the density target):
    - At least one non-drum layer must have a cycle-level variation device
      (`.every(N, fn)`, `.sometimes(fn)`, `.degradeBy(N)`, `.chunk(N, fn)`,
      `.palindrome()`, or mini-notation alternation `<a b c>` covering ≥ 3 values).
    - The bass must have melodic motion (alternation, scalar walk, octave
      jump, or `.arp(...)`) — not the same single pitch repeating.
    - The chord/pad layer must alternate ≥ 2 distinct chords across the loop.
-   - If the `stack(...)` has ≤ 3 layers and the genre isn't drone /
-     ambient / "just a bassline", add a 4th low-gain atmospheric layer
-     (ghost pad / counter-melody arp / sparkle).
+   - **Layer count = max(genre minimum, complexity minimum)**. Use the
+     genre row in `rules/variation.md` for the floor, then *raise* it
+     to match the complexity level (3 → 4–5 layers, 4 → 5–6, 5 → 6+).
+   - At complexity ≥ 4, also verify ONE polyrhythmic relationship,
+     ONE probabilistic transform, ONE sound-design move (FM /
+     supersaw / vowel filter / granular `.chop` / `.shape`), and a
+     master groove tail (`.late("[0 .01]*4")` on the outer `stack`).
 
 5. **Sanity-check** before responding (full list lives in
    `rules/output-format.md`):

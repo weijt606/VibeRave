@@ -36,6 +36,7 @@ const SKILL_ORDER = [
   'rules/lushness.md',
   'rules/sound-design.md',
   'rules/variation.md',
+  'rules/complexity.md',
   'rules/uncertainty.md',
   'rules/cannot-handle.md',
   'rules/meta-commands.md',
@@ -55,6 +56,7 @@ const SKILL_ORDER = [
   'recipes/vary.md',
   'examples/genres.md',
   'examples/techniques.md',
+  'examples/complex.md',
 ];
 const loadSystemPrompt = async () => {
   const parts = await Promise.all(
