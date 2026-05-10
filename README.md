@@ -25,6 +25,7 @@
 </p>
 
 <p align="center">
+  <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/lang-中文-ec4899?style=flat-square" alt="中文"></a>
   <a href="https://github.com/weijt606/VibeRave/stargazers"><img src="https://img.shields.io/github/stars/weijt606/VibeRave?style=flat-square&color=ec4899" alt="GitHub stars"></a>
   <a href="https://strudel.cc"><img src="https://img.shields.io/badge/built%20on-Strudel-22d3ee?style=flat-square" alt="Built on Strudel"></a>
   <img src="https://img.shields.io/badge/node-%E2%89%A520.6-22d3ee?style=flat-square" alt="Node ≥ 20.6">
