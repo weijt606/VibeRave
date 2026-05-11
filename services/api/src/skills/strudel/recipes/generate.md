@@ -76,6 +76,10 @@ no genre is "preferred." Every row points at a verified template in
 | "DnB" / "drum and bass" | breakbeat (`s("bd ~ ~ sd, hh*8?")` + `setcps(174/60/4)`) |
 | "drone / dark ambient" | sustained sub + slow filter sweeps + huge reverb tail |
 | "dub" | heavy `.delay()` / `.delaytime(.375)` / `.delayfeedback(.6)` + sparse drums + sub bass |
+| "dubstep" | dedicated template — 140 BPM half-time (kick on 1, snare on 3), wobble bass via `.lpf(sine.range(180,1600).slow(0.5)).lpq(15)`, deep sub < 150 Hz |
+| "brostep" / "Skrillex" | dedicated template — FM growl bass `.fmh(2.5).fmi(sine.range(2,14).slow(0.5))`, distorted kit, syncopated stab |
+| "riddim" | sparser dubstep — same 140 half-time but triplet wobble `.slow(0.333)`, no chord layer, all bass + space |
+| "future garage" | 130–138 BPM 2-step UK garage kit (`bd ~ ~ sd ~ bd ~ ~`), dubby chord with `.delay()`, NOT 140 half-time |
 | "funky / disco" | `gm_clavinet` / `gm_synth_strings_1` + 4-on-floor + chord stab + `.swing(4)` |
 | "house" | RolandTR909 + 4-on-floor + acid bass with `lpf(sine.range(...))` + chord stab |
 | "hyperpop / chiptune (fast bright)" | square + saw layered, fast `setcps`, vocoder vowel filter, breakbeats |

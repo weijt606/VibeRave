@@ -394,7 +394,7 @@ website/                               Astro / React Strudel REPL
 
 ## 提示词手册
 
-什么样的 prompt 出什么样的音乐？VibeRave 是有立场的：驱动 LLM 的 skill prompt 内置了 18 个手工调教的风格模板 + 5 个 level-4/5 的复杂模板（含 eddyflux "coastline" 基准参考）、显式的和弦 / 调式 / FM / vowel 知识、**genre-aware 的 lushness 规则**（trap 默认干、ambient 默认厚）、一个 1–5 级 **complexity dial**（中英文关键词都识别）、以及一份常用变形命令的速查表。把这一节当成菜单。
+什么样的 prompt 出什么样的音乐？VibeRave 是有立场的：驱动 LLM 的 skill prompt 内置了 22+ 个手工调教的风格模板 —— 包括完整的 **dubstep 家族**（dubstep / brostep / riddim / future garage）—— 加 6 个 level-4/5 的复杂模板（含 eddyflux "coastline" 基准参考）、显式的和弦 / 调式 / FM / vowel 知识、**genre-aware 的 lushness 规则**（trap 和 dubstep 默认干、ambient 默认厚）、一个 1–5 级 **complexity dial**（中英文关键词都识别）、以及一份常用变形命令的速查表。把这一节当成菜单。
 
 Vibe 标签编译出的电报上 prompt 格式是：
 
@@ -408,7 +408,7 @@ Vibe 标签编译出的电报上 prompt 格式是：
 
 | 类别 | 系统能干净处理的短语 |
 |---|---|
-| **流派 / vibe** | `lo-fi beat at 80 bpm`、`Berghain techno`、`minimal techno`、`house at 120`、`drum and bass at 174`、`acid bass`、`ambient pad`、`dub at 76 bpm`、`trap, half-time`、`IDM broken beats`、`chiptune / 8-bit`、`hyperpop`、`dark drone`、`funky disco`、`jazzy chill at 90` |
+| **流派 / vibe** | `lo-fi beat at 80 bpm`、`Berghain techno`、`minimal techno`、`house at 120`、`drum and bass at 174`、`acid bass`、`ambient pad`、`dub at 76 bpm`、`trap, half-time`、`dubstep at 140`、`brostep, FM growl`、`riddim`、`future garage at 134`、`IDM broken beats`、`chiptune / 8-bit`、`hyperpop`、`dark drone`、`funky disco`、`jazzy chill at 90` |
 | **风格混合** | `lo-fi + ambient`、`dub + minimal techno`、`house + jazz chill`、`acid + IDM` —— 在 12 个风格选择器里挑两个组合出混搭氛围 |
 | **鼓** | `add hi-hat`、`mute kick`、`more snare`、`double drums`、`swap drums for a 909 kit`、`swap to LinnDrum`、`harder kick` |
 | **效果** | `add reverb`、`more delay`、`make it dubby`、`make it darker`、`more crush`、`add a phaser` |
@@ -601,6 +601,11 @@ skill 内置了 eddyflux ["coastline"](https://strudel.cc) 作为 level-5 的参
 | *"ambient pad in c minor, slow, lots of reverb"* | Drone / 黑暗氛围 |
 | *"acid 303 bassline, lpf swept, lpq high"* | Acid |
 | *"trap at 140 half-time, 808 sub, hi-hat rolls"* | Trap |
+| *"dubstep at 140 with half-note wobble and deep sub"* | 经典 Dubstep —— `.lpf(sine.range(180,1600).slow(0.5))` wobble + sub < 150 Hz |
+| *"brostep, Skrillex-style FM growl bass at 140"* | Brostep —— `.fmh(2.5).fmi(sine.range(2,14).slow(0.5))` + 失真 kit |
+| *"riddim with triplet wobble at 140"* | Riddim —— 更稀疏的 dubstep、`.slow(0.333)` wobble、无和弦层 |
+| *"future garage at 134, dubby chord, 2-step kit"* | Future garage —— UK 2-step、氛围 pad + delay |
+| *"复杂的 dubstep with multi-lfo wobble and ghost snares"* | Level-4 dubstep —— LFO 错位调制 lpf + fmi、mask 切换 drop/breakdown 段 |
 | *"chiptune in F major at 160 with crush"* | 8-bit（明确指定）|
 | *"NES-style boss music in C minor at 150"* | 8-bit（明确）—— 裸 square + triangle、硬 `.crush(8)` |
 | *"raw, gritty 8-bit punk in F at 170, no reverb"* | 8-bit（明确）—— 不要任何氛围 |

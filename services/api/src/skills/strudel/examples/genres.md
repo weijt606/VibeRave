@@ -189,6 +189,103 @@ stack(
 )
 ```
 
+## Dubstep (140 BPM half-time, wobble bass, deep sub)
+
+Dubstep's identity is the **half-time drum feel** (kick on 1, snare on
+3 — sounds like 70 BPM even though `setcps` is 140 BPM) and the
+**wobble bass** (LFO modulating `.lpf` at ~2 oscillations per cycle).
+Sub stays below 150 Hz so the wobble layer can occupy the mids.
+Default DRY — adding a pad smothers the wobble.
+
+```js
+setcps(140/60/4)
+stack(
+  // Half-time drum feel: kick on 1, snare on 3 (of a 4-beat bar)
+  s("bd ~ ~ ~ sd ~ ~ ~").bank("RolandTR808").gain("1 .8 .9 .8"),
+  s("hh*8").bank("RolandTR808").gain(perlin.range(0.25, 0.5))
+    .struct("1 0 1 1 0 1 0 1"),
+  s("~ ~ ~ ~ ~ ~ cp ~").bank("RolandTR808").gain(0.45).room(0.3),
+  // Deep sub — kept below 150 Hz so it doesn't fight the wobble
+  note("<f1!2 ab1 c2>").s("sine")
+    .attack(0.005).release(0.5).gain(0.9).lpf(140),
+  // Wobble bass — sine LFO sweeps lpf ~2x per cycle ("wub-wub")
+  note("<f2!2 ab2 c3>").s("sawtooth")
+    .lpf(sine.range(180, 1600).slow(0.5)).lpq(15).gain(0.6)
+)
+```
+
+**Wobble-rate cheat sheet** (at 140 BPM 4/4):
+- `sine.range(...).slow(0.5)` → 2 wobbles per bar (half-note wobble — classic)
+- `sine.range(...).slow(0.25)` → 4 wobbles per bar (quarter-note)
+- `sine.range(...).slow(0.125)` → 8 wobbles per bar (eighth-note growl)
+
+## Brostep (Skrillex-era — FM growl bass, distorted, syncopated drop)
+
+Modern dubstep / brostep replaces the smooth sine-LFO wobble with **FM
+synthesis with modulated index** (`.fmh(N).fmi(sine.range(...))`) for a
+metallic / vocal growl character, plus heavy `.distort()` on the drums
+and a syncopated stab layer that gives the "drop" its momentum. Stays
+DRY — atmosphere kills the impact.
+
+```js
+setcps(140/60/4)
+stack(
+  // Distorted snappy kit
+  s("bd ~ ~ ~ sd ~ ~ ~").bank("RolandTR909").gain(0.95).distort(0.4),
+  s("hh*16").bank("RolandTR909").gain(perlin.range(0.2, 0.6))
+    .struct("1 0 1 1 0 1 0 1 1 1 0 1 0 1 0 0"),
+  // Punchy sub
+  note("<f1 ~ f1 ~ ab1 ~ ~ ~>").s("sine")
+    .attack(0.001).release(0.3).gain(0.85).lpf(120),
+  // FM growl bass — modulated fmi gives the "talking" wobble character
+  note("<f2!4 ab2 c3 g1 f2>").s("sine")
+    .fmh(2.5).fmi(sine.range(2, 14).slow(0.5))
+    .adsr(".005:.05:.6:.1").gain(0.65).distort(0.3),
+  // Syncopated chord stab — drives the drop forward
+  note("<[f3,ab3,c4]*2 ~ ~ ~>").s("sawtooth")
+    .lpf(sine.range(800, 4000).slow(0.25)).lpq(18).gain(0.4)
+    .struct("1 0 0 1 0 1 0 0")
+)
+```
+
+## Riddim (sparser dubstep — triplet wobble, mono-rhythmic)
+
+Riddim is dubstep stripped further: same 140 half-time but the wobble
+is **triplet-feel** (`.slow(0.333)`) and there's no chord layer. The
+groove is the bass talking against silence.
+
+```js
+setcps(140/60/4)
+stack(
+  s("bd ~ ~ ~ sd ~ ~ ~").bank("RolandTR808").gain(0.95),
+  s("~ ~ hh ~ ~ ~ hh ~").bank("RolandTR808").gain(0.4),
+  note("<f1!2 ab1 c2>").s("sine").gain(0.85).attack(0.005).release(0.4).lpf(135),
+  note("<f2 f2 f2 ab2 f2 f2 c3 f2>").s("sawtooth")
+    .lpf(sine.range(200, 1400).slow(0.333)).lpq(16).gain(0.6)
+)
+```
+
+## Future garage (130–138 BPM 2-step, dubby chord, NOT half-time)
+
+Future garage shares the dark-electronic palette with dubstep but
+the drums are **2-step UK garage** (syncopated kick + snare) at a
+**slower BPM** (130–138, not 140 half-time). Dubby chord with long
+delay returns, gentle reverb permitted — closer to Tier A than the
+dubstep family above.
+
+```js
+setcps(134/60/4)
+stack(
+  s("bd ~ ~ sd ~ bd ~ ~").bank("RolandTR808").gain(0.9),
+  s("hh*16").bank("RolandTR808").gain(perlin.range(0.2, 0.5))
+    .struct("1 0 1 0 1 1 0 1 0 1 0 1 1 0 1 0"),
+  note("<f2 c2 ab1 c2>").s("sawtooth").lpf(sine.range(300, 1200).slow(8)).lpq(12).gain(0.55),
+  note("<[f3,ab3,c4] [eb3,g3,bb3]>").s("gm_pad_warm")
+    .attack(0.2).release(0.8).gain(0.35).room(0.6)
+    .delay(0.4).delaytime(0.375).delayfeedback(0.55)
+)
+```
+
 ## Trap (140 half-time, 808 sub, hi-hat rolls)
 
 ```js

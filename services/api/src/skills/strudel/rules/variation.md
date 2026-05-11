@@ -68,6 +68,8 @@ huge; hyperpop *should* feel maximalist. Pick the row that matches:
 |---|---|---|
 | ambient / drone | **2** is fine, often 1 | Single drone with filter sweep is a complete piece |
 | trap / drill / phonk | **3** | bd + snare + 808 sub is the canonical sound; do NOT add a pad unless asked |
+| dubstep / brostep / riddim | **3–4** | half-time drums + deep sub + wobble bass; optional 4th syncopated stab. Pad smothers the wobble — DO NOT add one |
+| future garage | **4** | 2-step kit + bass + dubby chord with delay + atmospheric pad (this one IS lush — slower BPM, different identity) |
 | minimal techno / dub techno | **3** | kick + percussion + bass; the SPACE is the texture |
 | dub | **3–4** | sparse drums + bass + heavily delayed chord; the delay return is the 4th "layer" |
 | IDM / breakcore / footwork | **3** | broken drums + bass + one melodic mutation; over-layering kills the glitch character |

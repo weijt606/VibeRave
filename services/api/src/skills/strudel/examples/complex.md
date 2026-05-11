@@ -199,6 +199,54 @@ stack(
 ).late(perlin.range(0, 0.02)).size(5).slow(2)
 ```
 
+## Complex dubstep (level 4) — "multi-LFO wobble, ghost-snare polyrhythm, masked drop"
+
+Level-4 dubstep keeps the half-time DRY identity but pushes density
+through *rhythm and modulation depth*, not atmosphere. Multiple LFOs
+route to different parameters at different rates (the "talking" effect),
+ghost snares add polyrhythmic interest under the main snare hits, and
+sectional masking creates a drop / breakdown arc across 16 cycles.
+
+```js
+setcps(140/60/4)
+stack(
+  // Drums sub-stack: layered kit with distort applied to the whole group
+  stack(
+    s("bd ~ ~ ~ sd ~ ~ ~"),                                         // main kick + snare-on-3
+    s("hh*16").gain(perlin.range(0.2, 0.55))
+      .struct("1 0 1 1 0 1 0 1 1 1 0 1 0 1 0 0")
+      .every(4, fast(2)),                                           // hi-hat roll fill every 4 cycles
+    s("~ ~ rim ~ ~ rim ~ ~ rim ~ ~ ~ rim ~ ~ ~").gain(0.4).speed("<1 1.3 0.8>"), // ghost-snare polyrhythm
+    s("~ ~ ~ ~ ~ ~ cp ~").gain(0.5).room(0.3).delay(0.2).delaytime(0.375).delayfeedback(0.4)
+  ).bank("RolandTR808").distort(0.25),
+  // Side-chained deep sub — short envelope so it ducks under the kick
+  note("<f1!2 ab1 c2>").s("sine").attack(0.001).release(0.35).gain(0.9).lpf(140)
+    .every(8, x => x.add(12)),
+  // Main wobble bass — TWO LFOs at different rates routed to lpf + fmi
+  note("<f2!2 ab2 c3>").s("sine")
+    .fmh(2).fmi(sine.range(1, 8).slow(0.5))                         // FM index wobble (timbral)
+    .lpf(sine.range(220, 1800).slow(0.25)).lpq(15)                  // filter wobble (brightness) — 2x faster
+    .adsr(".005:.05:.7:.15").gain(0.6).distort(0.2),
+  // Masked stab — only present in the "drop" sections (cycles 1, 2, 3 of every 16)
+  note("<[f3,ab3,c4]*2 ~ ~ ~ ~>").s("sawtooth").layer(
+    x => x, x => x.add(0.07), x => x.add(-0.07)
+  ).lpf(sine.range(1000, 4500).slow(0.25)).lpq(20).gain(0.18)
+    .mask("<1 1 1 0>/16"),
+  // Reese-style mid bass — appears only in the breakdown (inverse mask)
+  note("<f3 ~ ab3 ~ c4 ~ ~ ~>").s("sawtooth").layer(
+    x => x, x => x.add(0.05), x => x.add(-0.05)
+  ).lpf(sine.range(400, 1800).slow(2)).lpq(10).gain(0.32)
+    .mask("<0 0 0 1>/16")                                           // inverse of stab — only in breakdown
+    .room(0.3)
+).late("[0 .008]*4").size(3)
+```
+
+The two LFOs at different `.slow()` values (0.5 vs 0.25) are the
+secret — they desync over the loop, so the wobble *never quite
+repeats* the same shape across consecutive bars. Combined with the
+mask that swaps stab and reese-bass roles every 16 cycles, you get a
+real drop / breakdown arc without writing an `arrange()`.
+
 ## How to use these
 
 1. **Pick the closest example by genre family** (techno / house / IDM / ambient).

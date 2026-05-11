@@ -502,13 +502,14 @@ backend is one new file in `infrastructure/` plus a branch in
 ## Prompt cookbook
 
 What kinds of prompts produce what kinds of music? VibeRave is opinionated:
-the skill prompt that drives the LLM has 18 hand-tuned genre templates +
-5 complex level-4/5 reference patterns (including the eddyflux
-"coastline" benchmark), explicit chord / mode / FM / vowel knowledge,
-genre-aware lushness rules so trap stays dry while ambient stays huge,
-a 1–5 **complexity dial** triggered by EN+ZH keywords, and a mutation
-cheatsheet for common iteration commands. Use this section as a
-starting menu.
+the skill prompt that drives the LLM has 22+ hand-tuned genre
+templates — including a full **dubstep family** (dubstep / brostep /
+riddim / future garage) — plus 6 complex level-4/5 reference patterns
+(including the eddyflux "coastline" benchmark), explicit chord /
+mode / FM / vowel knowledge, genre-aware lushness rules so trap and
+dubstep stay dry while ambient stays huge, a 1–5 **complexity dial**
+triggered by EN+ZH keywords, and a mutation cheatsheet for common
+iteration commands. Use this section as a starting menu.
 
 The on-wire prompt format compiled by the Vibe tab is:
 
@@ -525,7 +526,7 @@ applied on top.
 
 | Category | Phrases the system handles cleanly |
 |---|---|
-| **Genre / vibe** | `lo-fi beat at 80 bpm`, `Berghain techno`, `minimal techno`, `house at 120`, `drum and bass at 174`, `acid bass`, `ambient pad`, `dub at 76 bpm`, `trap, half-time`, `IDM broken beats`, `chiptune / 8-bit`, `hyperpop`, `dark drone`, `funky disco`, `jazzy chill at 90` |
+| **Genre / vibe** | `lo-fi beat at 80 bpm`, `Berghain techno`, `minimal techno`, `house at 120`, `drum and bass at 174`, `acid bass`, `ambient pad`, `dub at 76 bpm`, `trap, half-time`, `dubstep at 140`, `brostep, FM growl`, `riddim`, `future garage at 134`, `IDM broken beats`, `chiptune / 8-bit`, `hyperpop`, `dark drone`, `funky disco`, `jazzy chill at 90` |
 | **Style mixing** | `lo-fi + ambient`, `dub + minimal techno`, `house + jazz chill`, `acid + IDM` — combine two of the 12 style-picker genres for hybrid moods |
 | **Drums** | `add hi-hat`, `mute kick`, `more snare`, `double drums`, `swap drums for a 909 kit`, `swap to LinnDrum`, `harder kick` |
 | **Effects** | `add reverb`, `more delay`, `make it dubby`, `make it darker`, `more crush`, `add a phaser` |
@@ -738,6 +739,11 @@ Drop these into the textarea (or speak them) for instant results.
 | *"ambient pad in c minor, slow, lots of reverb"* | Drone / dark ambient |
 | *"acid 303 bassline, lpf swept, lpq high"* | Acid |
 | *"trap at 140 half-time, 808 sub, hi-hat rolls"* | Trap |
+| *"dubstep at 140 with half-note wobble and deep sub"* | Classic dubstep — `.lpf(sine.range(180,1600).slow(0.5))` wobble + sub < 150 Hz |
+| *"brostep, Skrillex-style FM growl bass at 140"* | Brostep — `.fmh(2.5).fmi(sine.range(2,14).slow(0.5))` + distorted kit |
+| *"riddim with triplet wobble at 140"* | Riddim — sparser dubstep, `.slow(0.333)` wobble, no chord layer |
+| *"future garage at 134, dubby chord, 2-step kit"* | Future garage — UK 2-step, atmospheric pad with delay |
+| *"complex dubstep with multi-lfo wobble and ghost snares"* | Level-4 dubstep — desynced LFOs on lpf + fmi, masked drop/breakdown sections |
 | *"chiptune in F major at 160 with crush"* | 8-bit (explicit) |
 | *"NES-style boss music in C minor at 150"* | 8-bit (explicit) — bare square + triangle, hard `.crush(8)` |
 | *"raw, gritty 8-bit punk in F at 170, no reverb"* | 8-bit (explicit) — opts out of all atmosphere |

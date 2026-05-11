@@ -20,6 +20,7 @@ Genres that lose their identity without atmospheric depth:
 - jazz / chill jazz / smooth jazz / ballad
 - trance / progressive / shoegaze / vaporwave / dream-pop
 - trip-hop / downtempo
+- future garage (the dubby cousin of dubstep — slower BPM, atmosphere on)
 
 For these, every `stack(...)` MUST include at least ONE of:
 
@@ -37,11 +38,12 @@ Add atmosphere only if the user explicitly asks ("more reverb", "lush",
 
 - minimal techno / hard techno / industrial techno / gabber / hardcore
 - trap / drill / phonk / memphis
+- dubstep / brostep / riddim (wobble character lives in the dry mids; pad smothers it)
 - IDM / breakcore / footwork / juke
 - punk / raw / gritty / lofi-punk / no-wave
 - chiptune / 8-bit / NES-style (when user asked for it)
 - jersey club / baltimore club / dembow
-- garage / UK garage / 2-step (the dry transient kind)
+- garage / UK garage / 2-step (the dry transient kind) — **future garage** is the exception, it lives in Tier A
 
 A Tier B track may still have **one** subtly reverbed transient (e.g.
 `.room(0.25)` on a clap or rim) — that's a percussion-design touch,
