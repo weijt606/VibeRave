@@ -6,6 +6,7 @@ import {
   setSettingsTab,
   setVibePttKey,
   setVibeVoiceLang,
+  setVibeBackgroundUrl,
 } from '../../../settings.mjs';
 import { themes } from '@strudel/codemirror';
 import { PrebakeCodeMirror } from '../../../repl/prebakeCodeMirror.mjs';
@@ -202,6 +203,7 @@ function MainSettingsContent({ started }) {
     vibeAutoApply,
     vibeVoiceLang,
     isCycleBarDisplayed,
+    vibeBackgroundUrl,
   } = useSettings();
   const shouldAlwaysSync = isUdels();
   const canChangeAudioDevice = AudioContext.prototype.setSinkId != null;
@@ -322,6 +324,26 @@ function MainSettingsContent({ started }) {
           onChange={(cbEvent) => settingsMap.setKey('isCycleBarDisplayed', cbEvent.target.checked)}
           value={isCycleBarDisplayed}
         />
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs opacity-70 whitespace-nowrap">Background image URL:</span>
+          <Textbox
+            value={vibeBackgroundUrl ?? ''}
+            onChange={setVibeBackgroundUrl}
+            placeholder="/viberave-bg.png"
+            className="flex-1 min-w-[200px]"
+          />
+          <button
+            type="button"
+            onClick={() => setVibeBackgroundUrl('/viberave-bg.png')}
+            className="text-xs px-2 py-1 rounded border border-muted hover:border-foreground"
+            title="Reset to default background"
+          >
+            Reset
+          </button>
+        </div>
+        <div className="text-[10px] opacity-50 pl-1">
+          Paste any image URL (https://...) or local path (e.g. /img/strudel-themes.png). Empty = default.
+        </div>
       </FormItem>
       <FormItem label="More Settings">
         <Checkbox

@@ -385,6 +385,14 @@ The default tab — multimodal prompt entry plus a chat history.
 - **Code-flash** — when the LLM applies new code, the changed lines
   in the open code editor briefly tint cyan with a 3 px diff-gutter
   bar on the left, fading over 0.8 s.
+- **Background image** — the chat area runs a full-bleed brand image
+  behind a dim gradient. Swap it from **Settings → Vibe → Background
+  image URL** — paste any URL (`https://...`) or any path the web
+  app serves (e.g. `/img/strudel-themes.png`, or drop a file into
+  `website/public/` and reference it as `/your-file.png`). Empty = the
+  default `viberave-bg.png`. Handy for themed demos, classroom use,
+  or matching the room's projector mood. Setting persists in
+  `localStorage` per browser.
 
 ### API Settings tab
 

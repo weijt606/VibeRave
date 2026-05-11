@@ -95,6 +95,13 @@ export const defaultSettings = {
   // variants. Default OFF — keeps the English-only fast path for users who
   // never speak Chinese. Toggled from the API Settings panel.
   vibeBilingual: false,
+  // Background image of the Vibe chat area. Default ships with the
+  // VibeRave brand artwork. Override from Settings → Vibe →
+  // "Background image URL" — paste any URL (http(s)://...), any path
+  // served by the web app (e.g. "/img/strudel-themes.png"), or empty
+  // to fall back to the default. Helpful for classroom / themed demos
+  // where the brand image doesn't fit the audience.
+  vibeBackgroundUrl: '/viberave-bg.png',
   // ─── API settings (LLM + STT) ─────────────────────────────────────────
   // Live in localStorage and are sent as override headers on every API
   // request. Backend never persists them. Empty values mean "use the
@@ -317,6 +324,7 @@ export const setVibePttKey = (code) => settingsMap.setKey('vibePttKey', code);
 export const setVibeAutoApply = (bool) => settingsMap.setKey('vibeAutoApply', !!bool);
 export const setVibeVoiceLang = (lang) => settingsMap.setKey('vibeVoiceLang', lang);
 export const setVibeBilingual = (bool) => settingsMap.setKey('vibeBilingual', !!bool);
+export const setVibeBackgroundUrl = (url) => settingsMap.setKey('vibeBackgroundUrl', url || '/viberave-bg.png');
 // API settings setters — wired to the API Settings tab.
 export const setLlmProvider = (v) => settingsMap.setKey('llmProvider', v);
 export const setLlmApiKey = (v) => settingsMap.setKey('llmApiKey', v);

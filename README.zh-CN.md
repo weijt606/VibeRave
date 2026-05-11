@@ -303,6 +303,7 @@ unzip vosk-model-small-en-us-0.15.zip && rm vosk-model-small-en-us-0.15.zip
 - **自动发送等待** —— PTT 松开后，等这么久再发给 LLM。**0 秒** = 即时（无审阅时间）。2-10 秒留时间让你看转写、用打字覆盖（打字会取消计时）。
 - **命令队列** —— 上一条还在生成时也能提交；自动排队按序触发。等待中的可以用 × 取消。
 - **代码闪烁** —— LLM 应用新代码时，被改的行短暂染青，左侧 3 px diff 槽条亮起，0.8 秒淡出。
+- **背景图** —— 聊天区域底层有一张满铺的品牌图加暗色渐变浮层。可在 **Settings → Vibe → Background image URL** 里换 —— 贴任意 URL（`https://...`），或贴 web 服务的本地路径（如 `/img/strudel-themes.png`，或把图丢进 `website/public/` 后引用 `/你的文件.png`）。留空 = 默认 `viberave-bg.png`。适合主题化演示、课堂使用、或匹配现场投影氛围。配置存在浏览器 `localStorage` 里。
 
 ### API Settings 标签
 

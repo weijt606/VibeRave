@@ -80,6 +80,15 @@ no genre is "preferred." Every row points at a verified template in
 | "brostep" / "Skrillex" | dedicated template — FM growl bass `.fmh(2.5).fmi(sine.range(2,14).slow(0.5))`, distorted kit, syncopated stab |
 | "riddim" | sparser dubstep — same 140 half-time but triplet wobble `.slow(0.333)`, no chord layer, all bass + space |
 | "future garage" | 130–138 BPM 2-step UK garage kit (`bd ~ ~ sd ~ bd ~ ~`), dubby chord with `.delay()`, NOT 140 half-time |
+| "nursery rhyme" / "儿歌" / "twinkle-style" | family-mode template (see `rules/family-mode.md`) — gm_grand_piano + gm_acoustic_bass, C major scale walk, 80 BPM |
+| "lullaby" / "摇篮曲" / "music box" | family-mode — gm_celesta 6/8 slow arpeggios + soft gm_pad_warm |
+| "marching band" / "进行曲" / "school march" | family-mode — gm_brass_section + LinnDrum kick on every beat + snare on 2/4, 110 BPM |
+| "waltz" / "华尔兹" | family-mode — 3/4 piano + gm_violin, 90 BPM |
+| "cartoon chase" / "动画追逐" / "tom and jerry" | family-mode — fast syncopated gm_brass_section, 145 BPM, walking acoustic bass |
+| "happy 8-bit" (kid context) / "Mario style" / "电子游戏" | family-mode — `square` lead + `triangle` bass in F major, NO `.crush()`, 130 BPM |
+| "polka" / "oompah" | family-mode — `<c2 [chord] g1 [chord]>` oompah bass, gm_clarinet melody, 115 BPM 2/4 |
+| "animal carnival" / "动物嘉年华" | family-mode — gm_flute high bird-melody + gm_cello walking-elephant bass + gm_celesta sparkle |
+| "scale practice" / "音阶练习" / "do re mi" | family-mode — gm_grand_piano C major scale up + down, 70 BPM, with metronome hi-hat |
 | "funky / disco" | `gm_clavinet` / `gm_synth_strings_1` + 4-on-floor + chord stab + `.swing(4)` |
 | "house" | RolandTR909 + 4-on-floor + acid bass with `lpf(sine.range(...))` + chord stab |
 | "hyperpop / chiptune (fast bright)" | square + saw layered, fast `setcps`, vocoder vowel filter, breakbeats |

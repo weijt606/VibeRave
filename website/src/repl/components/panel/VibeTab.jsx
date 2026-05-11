@@ -279,7 +279,14 @@ export function VibeTab() {
     vibeAutoApply: auto,
     vibeVoiceLang,
     vibeBilingual,
+    vibeBackgroundUrl,
   } = useSettings();
+  // Defensive: localStorage from older sessions won't have this key, so
+  // `vibeBackgroundUrl` may be undefined here. Also reject non-strings.
+  const bgUrl =
+    typeof vibeBackgroundUrl === 'string' && vibeBackgroundUrl.trim()
+      ? vibeBackgroundUrl
+      : '/viberave-bg.png';
   const selectedTrackId = useStore($selectedTrackId);
   const selectedTrack = useStore($selectedTrack);
 
@@ -307,11 +314,12 @@ export function VibeTab() {
       auto={auto}
       voiceLang={effectiveLang}
       fontFamily={fontFamily}
+      bgUrl={bgUrl}
     />
   );
 }
 
-function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily }) {
+function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily, bgUrl }) {
   const sessionId = useMemo(() => readOrCreateSessionId(trackId), [trackId]);
 
   const [prompt, setPrompt] = useState('');
@@ -676,7 +684,7 @@ function VibeForTrack({ trackId, trackName, pttKey, auto, voiceLang, fontFamily 
           // overlay keeps message text legible; individual messages add
           // their own backdrop-blur cards on top so the bg shows through
           // without competing with the chat.
-          backgroundImage: `linear-gradient(rgba(0,0,0,${messages.length === 0 ? 0.55 : 0.7}), rgba(0,0,0,${messages.length === 0 ? 0.75 : 0.85})), url('/viberave-bg.png')`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,${messages.length === 0 ? 0.55 : 0.7}), rgba(0,0,0,${messages.length === 0 ? 0.75 : 0.85})), url('${bgUrl}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
