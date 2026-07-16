@@ -132,6 +132,7 @@ export class Orbit {
 export class SuperdoughOutput {
   channelMerger;
   destinationGain;
+  masterLimiter;
 
   constructor(audioContext) {
     this.audioContext = audioContext;
@@ -145,7 +146,25 @@ export class SuperdoughOutput {
     this.channelMerger = new ChannelMergerNode(audioContext, { numberOfInputs: audioContext.destination.channelCount });
     this.destinationGain = new GainNode(audioContext);
     this.channelMerger.connect(this.destinationGain);
-    this.destinationGain.connect(audioContext.destination);
+    // Brickwall safety stage: summed orbits otherwise hit the destination raw,
+    // so stacked layers hard-clip into harsh digital distortion. Threshold sits
+    // just below 0 dBFS with a near-instant attack so the stage is transparent
+    // until the mix would clip. DynamicsCompressorNode clamps to 2 channels,
+    // so multichannel (surround) output keeps the direct connection.
+    if (audioContext.destination.channelCount <= 2) {
+      this.masterLimiter = new DynamicsCompressorNode(audioContext, {
+        threshold: -1.5,
+        knee: 3,
+        ratio: 20,
+        attack: 0.001,
+        release: 0.1,
+      });
+      this.destinationGain.connect(this.masterLimiter);
+      this.masterLimiter.connect(audioContext.destination);
+    } else {
+      this.masterLimiter = null;
+      this.destinationGain.connect(audioContext.destination);
+    }
   }
 
   reset() {
@@ -155,8 +174,10 @@ export class SuperdoughOutput {
   disconnect() {
     this.channelMerger.disconnect();
     this.destinationGain.disconnect();
+    this.masterLimiter?.disconnect();
     this.destinationGain = null;
     this.channelMerger = null;
+    this.masterLimiter = null;
   }
   connectToDestination = (input, channels = [0, 1]) => {
     //This upmix can be removed if correct channel counts are set throughout the app,

@@ -27,7 +27,17 @@ rules/
                         (one-expression, no viz hint, compile self-check)
   iteration.md          how to handle <current>...</current> blocks
   host-controls.md      loop_count / time_limit / continue_style protocol
+  diversity.md          anti-monotony: rotate kits, keys, tempi, idioms
+  lushness.md           genre-tiered atmosphere (Tier A/B/C)
+  sound-design.md       anti-chiptune + texture & realism moves
+  style-fidelity.md     genre fingerprints: tempo / drum feel / signature
+  variation.md          how "vary it" requests mutate the current code
+  complexity.md         1-5 complexity dial (EN+ZH trigger keywords)
+  family-mode.md        K-12 / classroom content constraints
   uncertainty.md        markers for unverified info, hallucination guard
+  cannot-handle.md      the can't-generate sentinel protocol
+  meta-commands.md      host actions (new track / play / stop / schedule)
+  error-recovery.md     what to do after an eval error round-trip
 reference/
   sounds.md             s("..."), .bank(...), GM list, drum aliases
   mini-notation.md      "bd*4", "<a b c>", "[a, b]", polymeter, chords
@@ -35,6 +45,7 @@ reference/
   effects.md            lpf/lpq/room/delay/crush/distort/phaser/duck/fm
   modulation.md         sine/saw/perlin .range / .rangex / LFO chaining
   tempo.md              setcps / setcpm / cycles
+  tonal.md              chord() / voicing() / mode() / anchor()
   visualization.md      pianoroll/scope/spectrum/spiral/pitchwheel
   dual-deck.md          stereo split, crossfader, left-house / right-techno
 recipes/
@@ -43,8 +54,12 @@ recipes/
   debug.md              error → fix substitution table
   vary.md               variation cookbook (5 lenses)
 examples/
-  genres.md             lo-fi / house / techno / ambient / acid / DnB / jazz
+  genres.md             22+ templates: lo-fi / house / techno / dubstep
+                        family / ambient / acid / DnB / jazz / ... written
+                        in different keys on purpose (anti-homogenization)
   techniques.md         polyrhythm / call-response / arp / sidechain / euclid
+  complex.md            level-4/5 reference patterns (incl. "coastline")
+  kids.md               K-12 / classroom-safe templates
 ```
 
 ## How to load
@@ -60,17 +75,30 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 async function loadStrudelSkill(skillRoot) {
+  // Keep this in sync with SKILL.md "Loading order" and the SKILL_ORDER
+  // array in services/api/src/index.mjs (the authoritative consumer).
   const order = [
     'rules/output-format.md',
     'rules/iteration.md',
     'rules/host-controls.md',
+    'rules/diversity.md',
+    'rules/lushness.md',
+    'rules/sound-design.md',
+    'rules/style-fidelity.md',
+    'rules/variation.md',
+    'rules/complexity.md',
+    'rules/family-mode.md',
     'rules/uncertainty.md',
+    'rules/cannot-handle.md',
+    'rules/meta-commands.md',
+    'rules/error-recovery.md',
     'reference/sounds.md',
     'reference/mini-notation.md',
     'reference/pattern-transforms.md',
     'reference/effects.md',
     'reference/modulation.md',
     'reference/tempo.md',
+    'reference/tonal.md',
     'reference/visualization.md',
     'reference/dual-deck.md',
     'recipes/generate.md',
@@ -79,6 +107,8 @@ async function loadStrudelSkill(skillRoot) {
     'recipes/vary.md',
     'examples/genres.md',
     'examples/techniques.md',
+    'examples/complex.md',
+    'examples/kids.md',
   ];
   const parts = await Promise.all(
     order.map((p) => readFile(join(skillRoot, p), 'utf8'))
