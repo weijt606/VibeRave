@@ -60,22 +60,37 @@ specialise earlier ones:
 2. `rules/iteration.md` — iteration / `<current>` semantics
 3. `rules/host-controls.md` — host signals: `loop_count`, `time_limit`,
    `continue_style`
-4. `rules/uncertainty.md` — how to mark unverified info
-5. `reference/sounds.md`
-6. `reference/mini-notation.md`
-7. `reference/pattern-transforms.md`
-8. `reference/effects.md`
-9. `reference/modulation.md`
-10. `reference/tempo.md`
-11. `reference/tonal.md` — chord(), voicing(), mode(), anchor()
-12. `reference/visualization.md`
-13. `reference/dual-deck.md` — stereo split / DJ mode
-14. `recipes/generate.md`
-15. `recipes/explain.md`
-16. `recipes/debug.md`
-17. `recipes/vary.md`
-18. `examples/genres.md`
-19. `examples/techniques.md`
+4. `rules/diversity.md` — anti-monotony: rotate kits, keys, tempi, idioms
+5. `rules/lushness.md` — genre-tiered atmosphere
+6. `rules/sound-design.md` — anti-chiptune + texture & realism
+7. `rules/style-fidelity.md` — genre fingerprints (tempo / drum feel / signature)
+8. `rules/variation.md`
+9. `rules/complexity.md`
+10. `rules/family-mode.md`
+11. `rules/uncertainty.md` — how to mark unverified info
+12. `rules/cannot-handle.md`
+13. `rules/meta-commands.md`
+14. `rules/error-recovery.md`
+15. `reference/sounds.md`
+16. `reference/mini-notation.md`
+17. `reference/pattern-transforms.md`
+18. `reference/effects.md`
+19. `reference/modulation.md`
+20. `reference/tempo.md`
+21. `reference/tonal.md` — chord(), voicing(), mode(), anchor()
+22. `reference/visualization.md`
+23. `reference/dual-deck.md` — stereo split / DJ mode
+24. `recipes/generate.md`
+25. `recipes/explain.md`
+26. `recipes/debug.md`
+27. `recipes/vary.md`
+28. `examples/genres.md`
+29. `examples/techniques.md`
+30. `examples/complex.md`
+31. `examples/kids.md`
+
+(This list mirrors `SKILL_FILES` in `services/api/src/index.mjs` — keep the
+two in sync when adding a file.)
 
 The minimum viable system prompt is **rules + reference/sounds +
 reference/mini-notation + reference/pattern-transforms + examples/genres**.

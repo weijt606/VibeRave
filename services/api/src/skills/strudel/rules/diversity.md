@@ -32,6 +32,19 @@ turns in the chat history):
 4. **Don't always pick the obvious sound.** "Lo-fi" doesn't HAVE to be
    `gm_epiano2` — sometimes try `gm_celesta`, `gm_vibraphone`, or a
    bandpass-filtered `triangle`.
+5. **Rotate the key.** Never let every track collapse into C minor. The
+   templates in `examples/genres.md` are written in different keys on
+   purpose — transpose freely. Pick the root from the mood: dark /
+   heavy → F, G or A minor in a low register; dreamy / melancholic →
+   D or E minor; bright / uplifting → F, G or D major. Don't reuse the
+   previous turn's root unless the user asked to stay in key.
+6. **Vary the tempo inside the genre's range.** Template BPMs are
+   midpoints, not laws: house lives at 120–128, techno 128–150, DnB
+   160–180, lo-fi 70–90. If last turn was house at 124, this turn try
+   122 or 127 — a 2–4 BPM shift changes the whole feel.
+7. **Vary the melodic register and rhythm placement.** If the last
+   turn's chords sat around octave 4 on even beats, try octave 3 with
+   an `.off(0.125, ...)` push, or an arpeggiated `.arp(...)` voicing.
 
 Visualization is picked by the user via the per-track viz dropdown;
 do not emit a `// viz:` hint or call `.scope()`/`.pianoroll()` etc.

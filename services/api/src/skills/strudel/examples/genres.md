@@ -4,6 +4,14 @@ Battle-tested patterns by vibe. Every snippet uses only function and sound
 names from `reference/*`. Pick the closest template, then mutate per the
 user's request.
 
+**Templates are starting points, not scripture.** They are deliberately
+written in different keys (F minor, A minor, G minor, D minor, E minor, …)
+— when you use one, feel free to transpose to a root that fits the mood,
+and pick a tempo inside the genre's authentic range rather than copying
+the template BPM verbatim. Copying a template note-for-note every turn is
+how every track ends up sounding the same. See `rules/diversity.md` and
+`rules/style-fidelity.md`.
+
 **The host renders the visualizer** (per-track painter dropdown — pianoroll
 / waveform / spectrum / scope / spiral). Do **not** append `.scope()` /
 `.pianoroll()` / `.fscope()` / `.tscope()` to your output. See
@@ -15,8 +23,8 @@ user's request.
 setcps(80/60/4)
 stack(
   s("bd ~ ~ bd, ~ ~ sd ~, hh*8?").bank("LinnDrum"),
-  note("<c2 g1 a1 e1>").s("sawtooth").lpf(400).gain(0.6),
-  note("<c4 eb4 g4 bb4>").s("gm_epiano2").room(0.6).gain(0.4)
+  note("<f2 c2 d2 a1>").s("sawtooth").lpf(400).gain(0.6),
+  note("<f4 ab4 c5 eb5>").s("gm_epiano2").room(0.6).gain(0.4)
 ).slow(2)
 ```
 
@@ -26,8 +34,8 @@ stack(
 setcps(124/60/4)
 stack(
   s("bd*4, [~ cp]*2, hh*8").bank("RolandTR909"),
-  note("c2*8".add("<0 7 5 3>")).s("sawtooth").lpf(sine.range(400,1800).slow(4)).lpq(15).gain(0.6),
-  note("<[c4,eb4,g4] [bb3,d4,f4]>").s("gm_synth_strings_1").attack(0.05).release(0.3).gain(0.4).room(0.4)
+  note("a1*8".add("<0 7 5 3>")).s("sawtooth").lpf(sine.range(400,1800).slow(4)).lpq(15).gain(0.6),
+  note("<[a3,c4,e4] [g3,b3,d4]>").s("gm_synth_strings_1").attack(0.05).release(0.3).gain(0.4).room(0.4)
 )
 ```
 
@@ -87,7 +95,7 @@ stack(
 ## Ambient pad
 
 ```js
-note("<c3 eb3 g3 bb3>")
+note("<e3 g3 b3 d4>")
   .s("gm_pad_warm")
   .lpf(sine.range(400,2000).slow(8))
   .room(0.9).gain(0.5).slow(4)
@@ -97,15 +105,15 @@ Layered version with subtle motion:
 
 ```js
 stack(
-  note("<c3 eb3 g3 bb3>").s("gm_pad_warm").lpf(sine.range(400,2000).slow(8)).room(0.9).gain(0.5),
-  note("<c5 ~ eb5 ~ g5 ~ bb5 ~>").s("triangle").attack(0.5).release(1.2).gain(0.3).room(0.8).delay(0.4).delaytime(0.5)
+  note("<e3 g3 b3 d4>").s("gm_pad_warm").lpf(sine.range(400,2000).slow(8)).room(0.9).gain(0.5),
+  note("<e5 ~ g5 ~ b5 ~ d6 ~>").s("triangle").attack(0.5).release(1.2).gain(0.3).room(0.8).delay(0.4).delaytime(0.5)
 ).slow(4)
 ```
 
 ## Acid bass (303 emulation)
 
 ```js
-note("c2 ~ eb2 g2 ~ c3 bb2 g2".add("<0 12>"))
+note("a1 ~ c2 e2 ~ a2 g2 e2".add("<0 12>"))
   .s("sawtooth").lpf(sine.range(200,2000).slow(4))
   .lpq(20).gain(0.7)
 ```
@@ -123,8 +131,8 @@ note("<[c3,eb3,g3] [bb2,d3,f3] [ab2,c3,eb3] [g2,b2,d3]>")
 setcps(174/60/4)
 stack(
   s("bd ~ ~ sd ~ bd ~ sd, hh*16?").bank("AkaiMPC60").gain(0.85),
-  note("c2 ~ ~ ~ eb2 ~ g1 ~").s("sawtooth").lpf(sine.range(200,1500).slow(8)).lpq(15).gain(0.7),
-  note("<[c4,eb4,g4] ~ [bb3,d4,f4] ~>").s("gm_pad_poly").room(0.6).gain(0.35)
+  note("g2 ~ ~ ~ bb2 ~ d2 ~").s("sawtooth").lpf(sine.range(200,1500).slow(8)).lpq(15).gain(0.7),
+  note("<[g4,bb4,d5] ~ [f4,a4,c5] ~>").s("gm_pad_poly").room(0.6).gain(0.35)
 )
 ```
 
@@ -154,12 +162,12 @@ setcps(90/60/4)
 stack(
   s("bd ~ ~ ~, ~ ~ sd ~, hh*8").bank("LinnDrum").gain("0.8 0.6 0.8 0.6").swing(4)
     .sometimes(x => x.fast(2)),
-  n("0 2 4 5".add("<0 7 5 -2>")).scale("C2:minor").s("gm_acoustic_bass").gain(0.7)
+  n("0 2 4 5".add("<0 7 5 -2>")).scale("D2:minor").s("gm_acoustic_bass").gain(0.7)
     .every(4, x => x.add(12)),
-  note("<[c3,eb3,g3,bb3] [f2,ab2,c3,eb3] [g2,bb2,d3,f3] [c3,eb3,g3,bb3]>")
+  note("<[d3,f3,a3,c4] [g2,bb2,d3,f3] [a2,c3,e3,g3] [d3,f3,a3,c4]>")
     .s("gm_epiano2").attack(0.05).release(0.6).room(0.4).gain(0.5)
     .arp("<0 1 2 1 2 3>"),
-  note("<c5 eb5 g4 bb4>").s("gm_celesta").attack(0.2).release(0.6)
+  note("<d5 f5 a4 c5>").s("gm_celesta").attack(0.2).release(0.6)
     .gain(0.22).room(0.7).delay(0.3).delaytime(0.375).delayfeedback(0.4)
     .sometimes(rev)
 ).slow(2)
@@ -294,7 +302,7 @@ stack(
   s("bd ~ ~ ~ ~ ~ bd bd").bank("RolandTR808"),
   s("~ ~ sd ~ ~ ~ sd ~").bank("RolandTR808").gain(0.9),
   s("hh*16").bank("RolandTR808").gain(perlin.range(0.3, 0.9)).every(4, x=>x.fast(2)),
-  note("c1 ~ ~ ~ eb1 ~ g1 ~").s("sine").gain(0.85).attack(0.001).release(0.4)
+  note("d1 ~ ~ ~ f1 ~ a1 ~").s("sine").gain(0.85).attack(0.001).release(0.4)
 )
 ```
 

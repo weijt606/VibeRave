@@ -62,6 +62,7 @@ VibeRave 是 [Strudel](https://strudel.cc) 的一个 fork，在原始 REPL 之�
 
 - **多模态输入** —— 语音（按住说）、文字（打字）、点击预设三种都是一等公民。同一会话里随便混 —— 语音用来快速生成、打字用来精修、预设标签用来跑高频命令。三种最终汇入同一个 LLM agent 回路。
 - **热替换实时编码** —— 每条命令都在改正在播的 pattern；调度器在切换瞬间不丢拍。
+- **受保护的主输出总线** —— superdough 主输出挂了一级透明砖墙限幅器，多层叠放不再硬削波出数字破音（多声道 / 环绕声输出自动旁通）；合成器包络加了消爆音下限，音头不再"咔哒"。
 - **可插拔 STT** —— 三个语音识别后端，每次请求都能切：`whisper`（本地）、`vosk`（本地，封闭语法下 < 15 ms）、`api`（任意 OpenAI 兼容 `/audio/transcriptions` 端点，包括 Qwen DashScope 的原生 paraformer / fun-asr 路径）。
 - **可插拔 LLM** —— `api`（任意 OpenAI 兼容 Chat Completions 端点）或 `ollama`（本地，无需 API key，跑你自己电脑上）。两边都从 **API Settings** 面板配置 —— 不用改 `.env`。
 - **多轨** —— 每轨独立可视化（**11 种模式**：钢琴卷帘 / 波形 / 频谱 / 示波器 / 色度 / 6 种 audioMotion 风格柱状 / 螺旋）。所有轨共用一个全局 cycle 时钟，节拍永远对齐。可视化画布**支持鼠标拖拽改高度**（40-480 px），**每轨 RMS 音量条**让你一眼看出哪一轨在响。
@@ -395,7 +396,7 @@ website/                               Astro / React Strudel REPL
 
 ## 提示词手册
 
-什么样的 prompt 出什么样的音乐？VibeRave 是有立场的：驱动 LLM 的 skill prompt 内置了 22+ 个手工调教的风格模板 —— 包括完整的 **dubstep 家族**（dubstep / brostep / riddim / future garage）—— 加 6 个 level-4/5 的复杂模板（含 eddyflux "coastline" 基准参考）、显式的和弦 / 调式 / FM / vowel 知识、**genre-aware 的 lushness 规则**（trap 和 dubstep 默认干、ambient 默认厚）、一个 1–5 级 **complexity dial**（中英文关键词都识别）、以及一份常用变形命令的速查表。把这一节当成菜单。
+什么样的 prompt 出什么样的音乐？VibeRave 是有立场的：驱动 LLM 的 skill prompt 内置了 22+ 个手工调教的风格模板 —— 包括完整的 **dubstep 家族**（dubstep / brostep / riddim / future garage）—— 加 6 个 level-4/5 的复杂模板（含 eddyflux "coastline" 基准参考）、显式的和弦 / 调式 / FM / vowel 知识、**genre-aware 的 lushness 规则**（trap 和 dubstep 默认干、ambient 默认厚）、**style-fidelity 风格保真规则**（点名的流派就是合同：BPM 区间 / 鼓型 / 标志性元素逐项自检后才出码）、**反同质化规则**（轮换调性、BPM、鼓机和音区，模板本身就刻意写在不同调上）、一个 1–5 级 **complexity dial**（中英文关键词都识别）、以及一份常用变形命令的速查表。把这一节当成菜单。
 
 Vibe 标签编译出的电报上 prompt 格式是：
 
@@ -651,6 +652,7 @@ LLM 被告知不要瞎编 —— 当请求无法转成 pattern 时，它返回�
 - **打字最准** —— 适合 LLM 可能听错的精修：*"raise lpf to 1200 on the bass layer"* 打字比说更安全。
 - **预设是入口** —— 点风格 + 编辑标签，可选编辑编译后的 prompt，再发。多选可切换，再点一次同一个标签即取消。
 - **现代电子默认** —— lushness + sound-design 规则把通用 prompt 引导远离裸锯齿、单声道、`.crush(8)`。如果你**真的**要 chiptune，就明确说出来（`"8-bit"`、`"chiptune"`、`"NES-style"`、`"crush it"`）—— 这些关键词会关掉默认规则。
+- **点名的流派就是合同** —— style-fidelity 规则在出码前逐项核对 BPM 区间、鼓型（four-on-floor / breakbeat / half-time / 2-step）和流派标志性元素；diversity 规则在轮次之间轮换调性和 BPM，连续生成不会再全部塌缩成同一套 C 小调四踩。
 - **多轨自动同步** —— 一个全局 cycle 时钟，随时开新轨不打扰其他轨。
 
 文本框上方：12 个青色风格标签（多选）在上、18 个描边编辑标签（多选）在下 —— 编译成 `<风格>: <标签, 自由文本>` 后发送。文本框上的 × 一键清空一切。驱动 LLM 的 skill 提示词在 `services/api/src/skills/strudel/`（rules、reference、recipes、examples）—— 在那里加新流派模板、变形配方、音色规则，下次 `/generate` 调用 LLM 就能用上（不需要重启；skill 文件每次请求都重读）。

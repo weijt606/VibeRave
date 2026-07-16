@@ -86,6 +86,33 @@ Mono = chiptune. Stereo = electronic.
 
 Use at least one stereo trick on the lead / chord / pad layer.
 
+## Texture & realism (kill the "raw digital" grain)
+
+Beyond layering and stereo width, these are the moves that separate a
+"demo patch" from a produced-sounding track:
+
+1. **Gentle drive, never bit-crush, for warmth.** `.shape(0.15–0.3)` on
+   bass or drums adds analog-style glue and harmonics. `.distort()` only
+   for genres whose identity is distortion (brostep, industrial).
+2. **Humanize velocities.** A hi-hat line where every hit has equal gain
+   reads instantly as "machine demo". Use an accent pattern
+   (`.gain("0.9 0.55 0.75 0.6")`) or continuous drift
+   (`.gain(perlin.range(0.35, 0.7))`) on hats, shakers, rims.
+3. **Ghost-note variation.** `.degradeBy(0.05–0.15)` on a 16th-note hat
+   layer, or `.sometimesBy(0.2, x => x.fast(2))` on a rim, keeps a loop
+   from sounding copy-pasted bar after bar.
+4. **Swing for human genres.** `.swing(4)` on the drum layer for lo-fi /
+   jazz / funk / hip-hop. Straight 16ths are correct for techno and
+   trance — swing is a genre decision, not a default.
+5. **Register separation.** Sub bass below ~200 Hz (`sine`, `.lpf(150)`),
+   mid bass 200–800 Hz, chords/pads above that, sparkle on top. Two
+   layers fighting for the same band is what makes a mix sound cheap
+   and gritty — separate them with `.lpf()`/`.hpf()` rather than
+   stacking everything full-range.
+6. **Soft attacks on sustained layers.** Any pad/string/choir layer gets
+   `.attack(0.05+)`; zero-attack sustained tones produce an audible edge
+   on every note-on.
+
 ## Anti-patterns (these reliably produce 8-bit output)
 
 - ❌ `note("...").s("sawtooth").gain(0.6)` — bare saw, no detune, no fx → thin

@@ -72,6 +72,10 @@ with no paid services.
   commands. All three feed into the same LLM agent loop.
 - **Hot-swap live coding** — every command edits the pattern that's currently
   playing; the audio scheduler keeps the beat across the swap.
+- **Protected master bus** — a transparent brickwall limiter on the
+  superdough master output stops stacked layers from hard-clipping into
+  digital harshness (auto-bypassed for multichannel/surround output), and
+  envelope declick floors remove note-on clicks on synth voices.
 - **Pluggable STT** — three speech-to-text backends, switchable per request:
   `whisper` (local), `vosk` (local, sub-15 ms on a closed grammar), or
   `api` (any OpenAI-compatible `/audio/transcriptions` endpoint, including
@@ -515,9 +519,14 @@ templates — including a full **dubstep family** (dubstep / brostep /
 riddim / future garage) — plus 6 complex level-4/5 reference patterns
 (including the eddyflux "coastline" benchmark), explicit chord /
 mode / FM / vowel knowledge, genre-aware lushness rules so trap and
-dubstep stay dry while ambient stays huge, a 1–5 **complexity dial**
-triggered by EN+ZH keywords, and a mutation cheatsheet for common
-iteration commands. Use this section as a starting menu.
+dubstep stay dry while ambient stays huge, a **style-fidelity rule**
+that treats a named genre as a contract (per-genre fingerprints:
+tempo range / drum feel / signature element, checked before emitting),
+anti-homogenization diversity rules (rotate keys, BPMs, kits, and
+registers between turns — templates ship in different keys on purpose),
+a 1–5 **complexity dial** triggered by EN+ZH keywords, and a mutation
+cheatsheet for common iteration commands. Use this section as a
+starting menu.
 
 The on-wire prompt format compiled by the Vibe tab is:
 
@@ -806,6 +815,11 @@ unchanged. Triggers:
   If you actually want chiptune, ask for it explicitly (`"8-bit"`,
   `"chiptune"`, `"NES-style"`, `"crush it"`) — those keywords flip the
   rule off.
+- **Named genres are contracts** — the style-fidelity rule checks tempo
+  range, drum feel (four-on-floor vs breakbeat vs half-time vs 2-step),
+  and each genre's signature element before code is returned, and the
+  diversity rules rotate keys and BPMs between turns so consecutive
+  generations don't all collapse into the same C-minor four-on-floor.
 - **Multi-track sessions stay in beat** automatically (one global cycle
   clock). Open a new track at any time without disturbing the others.
 
