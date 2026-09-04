@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&family=Courier+Prime:wght@400;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #05071A; font-family: "Noto Sans SC", "PingFang SC", system-ui, sans-serif; color: #F5F1E8; -webkit-font-smoothing: antialiased; }
+    a { color: #F6C85F; } a:hover { color: #F5F1E8; }
+    .cap { font-family: "Courier Prime", "Courier New", monospace; font-size: 15px; letter-spacing: 0.32em; text-transform: uppercase; color: rgba(245,241,232,0.5); }
+    @keyframes breathe { 0% { transform: translateY(0); } 100% { transform: translateY(-14px); } }
+    @media (prefers-reduced-motion: no-preference) { .breathe { animation: breathe 5s ease-in-out infinite alternate; } }
+  </style>
+</helmet>
+<div style="position: relative; width: 1920px; height: 1080px; overflow: hidden; background: linear-gradient(180deg, #03051A 0%, #08102E 40%, #2A1A44 72%, #4A1E3A 100%); font-family: 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif; color: #F5F1E8;">
+
+  <div style="position: absolute; left: 160px; top: 500px; width: 1600px; height: 1000px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,115,90,0.7), rgba(245,158,66,0.35) 40%, rgba(242,139,184,0.16) 65%, rgba(0,0,0,0) 100%); filter: blur(100px); mix-blend-mode: screen; pointer-events: none;"></div>
+  <div style="position: absolute; right: -300px; top: -400px; width: 1100px; height: 800px; border-radius: 50%; background: radial-gradient(closest-side, rgba(23,123,255,0.26), rgba(0,0,0,0) 100%); filter: blur(110px); mix-blend-mode: screen; pointer-events: none;"></div>
+  <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 75% 70% at 50% 60%, rgba(0,0,0,0) 45%, rgba(2,3,12,0.6) 100%); pointer-events: none;"></div>
+  <svg width="1920" height="1080" viewBox="0 0 1920 1080" style="position: absolute; inset: 0; opacity: 0.32; mix-blend-mode: overlay; pointer-events: none;">
+    <filter id="grainA"><feTurbulence type="fractalNoise" baseFrequency="0.62" numOctaves="3" stitchTiles="stitch"></feTurbulence><feColorMatrix type="saturate" values="0"></feColorMatrix><feComponentTransfer><feFuncR type="linear" slope="2.2" intercept="-0.6"></feFuncR><feFuncG type="linear" slope="2.2" intercept="-0.6"></feFuncG><feFuncB type="linear" slope="2.2" intercept="-0.6"></feFuncB></feComponentTransfer></filter>
+    <rect width="1920" height="1080" filter="url(#grainA)"></rect>
+  </svg>
+  <svg width="1920" height="1080" viewBox="0 0 1920 1080" style="position: absolute; inset: 0; pointer-events: none;" fill="#F5F1E8">
+    <circle cx="220" cy="140" r="2.2" opacity="0.75"></circle><circle cx="520" cy="300" r="1.3" opacity="0.5"></circle><circle cx="860" cy="120" r="1.7" opacity="0.6"></circle><circle cx="1240" cy="220" r="1.1" opacity="0.5"></circle><circle cx="1560" cy="90" r="2.4" opacity="0.75"></circle><circle cx="1760" cy="360" r="1.5" opacity="0.5"></circle><circle cx="340" cy="480" r="1" opacity="0.45"></circle><circle cx="1680" cy="520" r="1.2" opacity="0.45"></circle><circle cx="1000" cy="60" r="1.4" opacity="0.55"></circle><circle cx="120" cy="700" r="1.6" opacity="0.45"></circle><circle cx="700" cy="420" r="0.9" opacity="0.35"></circle>
+  </svg>
+
+  <!-- rising sun, half below horizon -->
+  <div class="breathe" style="position: absolute; inset: 0; pointer-events: none;">
+    <div style="position: absolute; left: 960px; top: 820px; width: 1300px; height: 900px; margin-left: -650px; margin-top: -450px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,115,90,0.65), rgba(245,158,66,0.3) 45%, rgba(0,0,0,0) 100%); filter: blur(90px); mix-blend-mode: screen;"></div>
+    <div style="position: absolute; left: 960px; top: 820px; width: 820px; height: 820px; margin-left: -410px; margin-top: -410px; border-radius: 50%; background: radial-gradient(closest-side, rgba(246,200,95,0.9), rgba(255,115,90,0.45) 60%, rgba(0,0,0,0) 100%); filter: blur(40px); mix-blend-mode: screen;"></div>
+    <div style="position: absolute; left: 960px; top: 820px; width: 606px; height: 606px; margin-left: -311px; margin-top: -303px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,60,60,0) 91%, rgba(255,80,80,0.55) 96%, rgba(255,80,80,0) 100%); mix-blend-mode: screen; filter: blur(2px);"></div>
+    <div style="position: absolute; left: 960px; top: 820px; width: 606px; height: 606px; margin-left: -295px; margin-top: -303px; border-radius: 50%; background: radial-gradient(closest-side, rgba(80,120,255,0) 91%, rgba(120,150,255,0.5) 96%, rgba(120,150,255,0) 100%); mix-blend-mode: screen; filter: blur(2px);"></div>
+    <div style="position: absolute; left: 960px; top: 820px; width: 600px; height: 600px; margin-left: -300px; margin-top: -300px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #FFF8E8 0%, #FBDA8A 30%, #F6B45A 56%, #F0865E 80%, rgba(242,139,184,0.85) 93%, rgba(242,139,184,0) 100%);"></div>
+  </div>
+  <svg width="1920" height="1080" viewBox="0 0 1920 1080" style="position: absolute; inset: 0; pointer-events: none;">
+    <circle cx="960" cy="820" r="420" fill="none" stroke="#F6C85F" stroke-opacity="0.2" stroke-width="1"></circle>
+    <circle cx="960" cy="820" r="540" fill="none" stroke="#F28BB8" stroke-opacity="0.12" stroke-width="1"></circle>
+    <circle cx="960" cy="820" r="680" fill="none" stroke="#B8C0FF" stroke-opacity="0.07" stroke-width="1"></circle>
+  </svg>
+  <!-- water below horizon -->
+  <div style="position: absolute; left: 0; right: 0; top: 820px; bottom: 0; background: linear-gradient(180deg, rgba(8,10,34,0.55), rgba(8,10,34,0.92)); pointer-events: none;"></div>
+  <div style="position: absolute; left: 0; right: 0; top: 820px; height: 1px; background: linear-gradient(90deg, rgba(245,241,232,0) 0%, rgba(245,241,232,0.55) 25%, rgba(245,241,232,0.55) 75%, rgba(245,241,232,0) 100%); pointer-events: none;"></div>
+  <div style="position: absolute; left: 0; right: 0; top: 821px; height: 259px; overflow: hidden; pointer-events: none; -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.95), rgba(0,0,0,0)); mask-image: linear-gradient(180deg, rgba(0,0,0,0.95), rgba(0,0,0,0));">
+    <div style="position: absolute; left: 960px; top: -200px; width: 900px; height: 500px; margin-left: -450px; border-radius: 50%; background: radial-gradient(closest-side, rgba(246,200,95,0.85), rgba(255,115,90,0.4) 55%, rgba(0,0,0,0) 100%); filter: blur(30px); transform: scaleY(0.5); mix-blend-mode: screen;"></div>
+    <div style="position: absolute; left: 320px; right: 320px; top: 0; height: 259px; background: repeating-linear-gradient(180deg, rgba(255,205,160,0.45) 0 2px, rgba(0,0,0,0) 2px 11px); -webkit-mask-image: radial-gradient(ellipse 48% 100% at 50% 0%, #000, rgba(0,0,0,0)); mask-image: radial-gradient(ellipse 48% 100% at 50% 0%, #000, rgba(0,0,0,0));"></div>
+  </div>
+
+  <div style="position: absolute; top: 48px; left: 64px; display: flex; align-items: center; gap: 22px;">
+    <svg width="34" height="34" viewBox="0 0 28 28" fill="none" stroke="#F6C85F" stroke-width="1.2" stroke-linecap="round"><line x1="14" y1="2" x2="14" y2="8"></line><line x1="14" y1="20" x2="14" y2="26"></line><line x1="2" y1="14" x2="8" y2="14"></line><line x1="20" y1="14" x2="26" y2="14"></line><line x1="5.5" y1="5.5" x2="9.8" y2="9.8"></line><line x1="18.2" y1="18.2" x2="22.5" y2="22.5"></line><line x1="22.5" y1="5.5" x2="18.2" y2="9.8"></line><line x1="9.8" y1="18.2" x2="5.5" y2="22.5"></line></svg>
+    <div style="font-family: 'Unbounded', sans-serif; font-weight: 500; font-size: 20px; letter-spacing: 0.30em;">VIBERAVE</div>
+    <div class="cap">× Mañana 明日公园 · 04 生长</div>
+  </div>
+  <div class="cap" style="position: absolute; top: 56px; right: 64px;">海口 Haikou · 10.23 – 10.25</div>
+
+  <div style="position: absolute; left: 0; right: 0; top: 190px; display: flex; flex-direction: column; align-items: center; gap: 34px;">
+    <div class="cap" style="color: rgba(246,200,95,0.9);">走过来 · 对着麦克风说</div>
+    <div style="font-size: 116px; font-weight: 300; line-height: 1.05; text-align: center; letter-spacing: 0.01em; text-shadow: 0 0 80px rgba(246,200,95,0.35);">“来点 lo-fi”</div>
+    <div style="font-size: 28px; font-weight: 300; color: rgba(245,241,232,0.78); text-align: center; line-height: 1.6;">三秒后，你会听到 AI 把它写成代码，然后放出来。</div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 64px; display: flex; justify-content: center; align-items: center; gap: 34px; font-size: 22px; font-weight: 300; color: rgba(245,241,232,0.72);">
+    <span>再快一点</span><span style="width: 3px; height: 3px; border-radius: 50%; background: rgba(245,241,232,0.4);"></span>
+    <span>加个鼓</span><span style="width: 3px; height: 3px; border-radius: 50%; background: rgba(245,241,232,0.4);"></span>
+    <span>像海边的傍晚</span><span style="width: 3px; height: 3px; border-radius: 50%; background: rgba(245,241,232,0.4);"></span>
+    <span style="color: #FFB4A2;">来个 Drop</span>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

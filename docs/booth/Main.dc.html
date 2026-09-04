@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&family=Courier+Prime:wght@400;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0A0B1E; font-family: "Noto Sans SC", "PingFang SC", system-ui, sans-serif; color: #F5F1E8; -webkit-font-smoothing: antialiased; }
+    a { color: #F6C85F; } a:hover { color: #F5F1E8; }
+    .mono { font-family: "Courier Prime", "Courier New", monospace; letter-spacing: 0.22em; text-transform: uppercase; }
+    .cap { font-family: "Courier Prime", "Courier New", monospace; font-size: 10.5px; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(245,241,232,0.42); }
+    .chip { height: 44px; padding: 0 18px; display: inline-flex; align-items: center; border-radius: 999px; font-size: 14px; font-weight: 400; color: rgba(245,241,232,0.86); background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03)); border: 1px solid rgba(255,255,255,0.10); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14); }
+    .chip.on { color: #FFE9B8; background: linear-gradient(180deg, rgba(246,200,95,0.28), rgba(245,158,66,0.12)); border-color: rgba(246,200,95,0.40); box-shadow: inset 0 1px 0 rgba(255,236,190,0.35), 0 0 28px rgba(245,158,66,0.22); }
+    .chip.hot { color: #FFC9BB; background: linear-gradient(180deg, rgba(255,115,90,0.26), rgba(255,115,90,0.08)); border-color: rgba(255,115,90,0.40); box-shadow: inset 0 1px 0 rgba(255,200,180,0.30), 0 0 28px rgba(255,115,90,0.18); font-weight: 500; }
+    .row { display: flex; align-items: center; gap: 18px; height: 64px; padding: 0 12px 0 16px; border-top: 1px solid rgba(245,241,232,0.07); position: relative; }
+    .row.sel { background: linear-gradient(90deg, rgba(246,200,95,0.10), rgba(246,200,95,0) 60%); }
+    .row.sel::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 2px; background: linear-gradient(180deg, #F6C85F, #F28BB8); box-shadow: 0 0 10px rgba(246,200,95,0.6); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .glow { filter: drop-shadow(0 0 6px currentColor); }
+  </style>
+</helmet>
+<div style="position: relative; width: 1194px; height: 834px; overflow: hidden; background: linear-gradient(180deg, #06071A 0%, #0D0F2B 48%, #1C1230 100%); font-family: 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif; color: #F5F1E8;">
+
+  <!-- light leaks -->
+  <div style="position: absolute; left: -120px; top: 300px; width: 900px; height: 620px; border-radius: 50%; background: radial-gradient(closest-side, rgba(245,158,66,0.55), rgba(242,139,184,0.22) 55%, rgba(0,0,0,0) 100%); filter: blur(70px); mix-blend-mode: screen; pointer-events: none;"></div>
+  <div style="position: absolute; right: -200px; top: -260px; width: 760px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(111,168,255,0.28), rgba(0,0,0,0) 100%); filter: blur(80px); mix-blend-mode: screen; pointer-events: none;"></div>
+  <!-- vignette -->
+  <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 80% 70% at 42% 50%, rgba(0,0,0,0) 40%, rgba(3,4,14,0.55) 100%); pointer-events: none;"></div>
+  <!-- grain -->
+  <svg width="1194" height="834" viewBox="0 0 1194 834" style="position: absolute; inset: 0; opacity: 0.30; mix-blend-mode: overlay; pointer-events: none;">
+    <filter id="grainM"><feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="3" stitchTiles="stitch"></feTurbulence><feColorMatrix type="saturate" values="0"></feColorMatrix><feComponentTransfer><feFuncR type="linear" slope="2.2" intercept="-0.6"></feFuncR><feFuncG type="linear" slope="2.2" intercept="-0.6"></feFuncG><feFuncB type="linear" slope="2.2" intercept="-0.6"></feFuncB></feComponentTransfer></filter>
+    <rect width="1194" height="834" filter="url(#grainM)"></rect>
+  </svg>
+  <!-- dust -->
+  <svg width="1194" height="834" viewBox="0 0 1194 834" style="position: absolute; inset: 0; pointer-events: none;" fill="#F5F1E8">
+    <circle cx="140" cy="110" r="1.6" opacity="0.7"></circle><circle cx="410" cy="190" r="1" opacity="0.5"></circle><circle cx="620" cy="80" r="1.4" opacity="0.6"></circle><circle cx="300" cy="420" r="0.9" opacity="0.4"></circle><circle cx="80" cy="640" r="1.2" opacity="0.45"></circle><circle cx="540" cy="330" r="1.1" opacity="0.5"></circle><circle cx="250" cy="760" r="1.3" opacity="0.4"></circle>
+  </svg>
+
+  <!-- top bar -->
+  <div style="position: absolute; top: 0; left: 0; right: 0; height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 36px;">
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <svg width="22" height="22" viewBox="0 0 28 28" fill="none" stroke="#F6C85F" stroke-width="1.3" stroke-linecap="round"><line x1="14" y1="2" x2="14" y2="8"></line><line x1="14" y1="20" x2="14" y2="26"></line><line x1="2" y1="14" x2="8" y2="14"></line><line x1="20" y1="14" x2="26" y2="14"></line><line x1="5.5" y1="5.5" x2="9.8" y2="9.8"></line><line x1="18.2" y1="18.2" x2="22.5" y2="22.5"></line><line x1="22.5" y1="5.5" x2="18.2" y2="9.8"></line><line x1="9.8" y1="18.2" x2="5.5" y2="22.5"></line></svg>
+      <div style="font-family: 'Unbounded', sans-serif; font-weight: 500; font-size: 13px; letter-spacing: 0.30em; color: #F5F1E8;">VIBERAVE</div>
+      <div class="cap">× Mañana · 04 生长</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 28px;">
+      <div class="cap" style="color: rgba(246,200,95,0.85);">晨昏 Twilight · 18:42</div>
+      <div style="display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">
+        <div style="height: 38px; padding: 0 18px; display: flex; align-items: center; border-radius: 999px; background: rgba(245,241,232,0.92); color: #14122A; font-size: 13px; font-weight: 500;">成人</div>
+        <div style="height: 38px; padding: 0 18px; display: flex; align-items: center; border-radius: 999px; color: rgba(245,241,232,0.6); font-size: 13px;">儿童</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 4px; font-size: 13px; color: rgba(245,241,232,0.7);">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.6"></path><path d="M13 2v3h-3"></path></svg>
+        下一位
+      </div>
+    </div>
+  </div>
+
+  <!-- LEFT · sun stage -->
+  <div style="position: absolute; top: 76px; left: 0; width: 716px; bottom: 0;">
+    <!-- heard -->
+    <div style="position: absolute; left: 36px; top: 20px; display: flex; flex-direction: column; gap: 10px; width: 330px;">
+      <div class="cap">听到 · Heard</div>
+      <div style="font-size: 27px; font-weight: 300; line-height: 1.35; color: #F5F1E8; text-wrap: balance;">“来点更暗的，<br>像日落之后”</div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px;">
+        <div class="dot" style="background: #F6C85F; box-shadow: 0 0 12px #F6C85F;"></div>
+        <div style="font-size: 13px; color: rgba(245,241,232,0.7);">AI 正在改贝斯 · 滤波压到 400</div>
+        <div class="cap" style="color: rgba(245,241,232,0.35);">2.1 s</div>
+      </div>
+    </div>
+
+    <!-- sun -->
+    <div style="position: absolute; left: 0; width: 716px; top: 0; height: 400px; pointer-events: none;">
+      <div style="position: absolute; left: 358px; top: 250px; width: 560px; height: 420px; margin-left: -280px; margin-top: -210px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,115,90,0.55), rgba(245,158,66,0.25) 45%, rgba(0,0,0,0) 100%); filter: blur(60px); mix-blend-mode: screen;"></div>
+      <div style="position: absolute; left: 358px; top: 250px; width: 300px; height: 300px; margin-left: -150px; margin-top: -150px; border-radius: 50%; background: radial-gradient(closest-side, rgba(246,200,95,0.85), rgba(255,115,90,0.45) 60%, rgba(0,0,0,0) 100%); filter: blur(26px); mix-blend-mode: screen;"></div>
+      <!-- chromatic fringe -->
+      <div style="position: absolute; left: 358px; top: 250px; width: 212px; height: 212px; margin-left: -109px; margin-top: -106px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,60,60,0) 88%, rgba(255,80,80,0.55) 95%, rgba(255,80,80,0) 100%); mix-blend-mode: screen; filter: blur(1.5px);"></div>
+      <div style="position: absolute; left: 358px; top: 250px; width: 212px; height: 212px; margin-left: -103px; margin-top: -106px; border-radius: 50%; background: radial-gradient(closest-side, rgba(80,120,255,0) 88%, rgba(120,150,255,0.5) 95%, rgba(120,150,255,0) 100%); mix-blend-mode: screen; filter: blur(1.5px);"></div>
+      <!-- core -->
+      <div style="position: absolute; left: 358px; top: 250px; width: 210px; height: 210px; margin-left: -105px; margin-top: -105px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #FFF8E8 0%, #FBDA8A 30%, #F6B45A 56%, #F0865E 80%, rgba(242,139,184,0.85) 93%, rgba(242,139,184,0) 100%);"></div>
+      <!-- corona rings -->
+      <svg width="716" height="400" viewBox="0 0 716 400" style="position: absolute; inset: 0;">
+        <circle cx="358" cy="250" r="150" fill="none" stroke="#F6C85F" stroke-opacity="0.22" stroke-width="0.8"></circle>
+        <circle cx="358" cy="250" r="196" fill="none" stroke="#F28BB8" stroke-opacity="0.13" stroke-width="0.8"></circle>
+        <circle cx="358" cy="250" r="248" fill="none" stroke="#B8C0FF" stroke-opacity="0.08" stroke-width="0.8"></circle>
+      </svg>
+    </div>
+    <!-- horizon + haze + reflection -->
+    <div style="position: absolute; left: 0; right: 0; top: 344px; height: 1px; background: linear-gradient(90deg, rgba(245,241,232,0) 0%, rgba(245,241,232,0.45) 30%, rgba(245,241,232,0.45) 70%, rgba(245,241,232,0) 100%); pointer-events: none;"></div>
+    <div style="position: absolute; left: 60px; right: 60px; top: 330px; height: 30px; background: radial-gradient(ellipse 50% 100% at 50% 50%, rgba(255,236,190,0.35), rgba(0,0,0,0) 100%); filter: blur(10px); mix-blend-mode: screen; pointer-events: none;"></div>
+    <div style="position: absolute; left: 0; width: 716px; top: 345px; height: 120px; overflow: hidden; pointer-events: none; -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0)); mask-image: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0));">
+      <div style="position: absolute; left: 358px; top: -100px; width: 320px; height: 220px; margin-left: -160px; border-radius: 50%; background: radial-gradient(closest-side, rgba(246,200,95,0.75), rgba(255,115,90,0.35) 55%, rgba(0,0,0,0) 100%); filter: blur(18px); transform: scaleY(0.55); mix-blend-mode: screen;"></div>
+      <div style="position: absolute; left: 118px; right: 118px; top: 0; height: 120px; background: repeating-linear-gradient(180deg, rgba(255,200,150,0.35) 0 1.5px, rgba(0,0,0,0) 1.5px 7px); -webkit-mask-image: radial-gradient(ellipse 50% 100% at 50% 0%, #000, rgba(0,0,0,0)); mask-image: radial-gradient(ellipse 50% 100% at 50% 0%, #000, rgba(0,0,0,0));"></div>
+    </div>
+    <!-- PTT label sits on the sun -->
+    <div style="position: absolute; left: 0; width: 716px; top: 224px; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none;">
+      <div style="font-size: 19px; font-weight: 500; letter-spacing: 0.06em; color: #2A1608;">按住说话</div>
+      <div class="mono" style="font-size: 9.5px; color: rgba(42,22,8,0.6);">Hold · Space</div>
+    </div>
+
+    <!-- tracks -->
+    <div style="position: absolute; left: 36px; right: 28px; top: 452px; bottom: 0; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 0 0 16px;">
+        <div class="cap">光带 · 4 tracks</div>
+        <div style="display: flex; gap: 22px;">
+          <div class="cap" style="color: rgba(245,241,232,0.7); height: 44px; display: flex; align-items: center;">+ 新光带</div>
+          <div class="cap" style="color: rgba(255,115,90,0.85); height: 44px; display: flex; align-items: center;">全部停</div>
+        </div>
+      </div>
+
+      <div class="row sel">
+        <div class="dot" style="background: #F6C85F; box-shadow: 0 0 10px #F6C85F;"></div>
+        <div style="width: 48px; font-size: 14px; font-weight: 500;">鼓</div>
+        <svg width="440" height="40" viewBox="0 0 440 40" style="flex: 1; color: #F6C85F;" class="glow">
+          <g fill="currentColor"><rect x="4" y="8" width="3" height="12"></rect><rect x="18" y="14" width="3" height="6"></rect><rect x="32" y="11" width="3" height="9"></rect><rect x="46" y="15" width="3" height="5"></rect><rect x="60" y="6" width="3" height="14"></rect><rect x="74" y="14" width="3" height="6"></rect><rect x="88" y="12" width="3" height="8"></rect><rect x="102" y="16" width="3" height="4"></rect><rect x="116" y="8" width="3" height="12"></rect><rect x="130" y="13" width="3" height="7"></rect><rect x="144" y="10" width="3" height="10"></rect><rect x="158" y="15" width="3" height="5"></rect><rect x="172" y="6" width="3" height="14"></rect><rect x="186" y="14" width="3" height="6"></rect><rect x="200" y="12" width="3" height="8"></rect><rect x="214" y="16" width="3" height="4"></rect><rect x="228" y="8" width="3" height="12"></rect><rect x="242" y="13" width="3" height="7"></rect><rect x="256" y="10" width="3" height="10"></rect><rect x="270" y="15" width="3" height="5"></rect><rect x="284" y="6" width="3" height="14"></rect><rect x="298" y="14" width="3" height="6"></rect><rect x="312" y="12" width="3" height="8"></rect><rect x="326" y="16" width="3" height="4"></rect><rect x="340" y="8" width="3" height="12"></rect><rect x="354" y="13" width="3" height="7"></rect><rect x="368" y="10" width="3" height="10"></rect><rect x="382" y="15" width="3" height="5"></rect><rect x="396" y="6" width="3" height="14"></rect><rect x="410" y="14" width="3" height="6"></rect><rect x="424" y="12" width="3" height="8"></rect></g>
+          <g fill="currentColor" opacity="0.22"><rect x="4" y="21" width="3" height="9"></rect><rect x="18" y="21" width="3" height="4"></rect><rect x="32" y="21" width="3" height="6"></rect><rect x="46" y="21" width="3" height="3"></rect><rect x="60" y="21" width="3" height="10"></rect><rect x="74" y="21" width="3" height="4"></rect><rect x="88" y="21" width="3" height="6"></rect><rect x="102" y="21" width="3" height="3"></rect><rect x="116" y="21" width="3" height="9"></rect><rect x="130" y="21" width="3" height="5"></rect><rect x="144" y="21" width="3" height="7"></rect><rect x="158" y="21" width="3" height="3"></rect><rect x="172" y="21" width="3" height="10"></rect><rect x="186" y="21" width="3" height="4"></rect><rect x="200" y="21" width="3" height="6"></rect><rect x="214" y="21" width="3" height="3"></rect><rect x="228" y="21" width="3" height="9"></rect><rect x="242" y="21" width="3" height="5"></rect><rect x="256" y="21" width="3" height="7"></rect><rect x="270" y="21" width="3" height="3"></rect><rect x="284" y="21" width="3" height="10"></rect><rect x="298" y="21" width="3" height="4"></rect><rect x="312" y="21" width="3" height="6"></rect><rect x="326" y="21" width="3" height="3"></rect><rect x="340" y="21" width="3" height="9"></rect><rect x="354" y="21" width="3" height="5"></rect><rect x="368" y="21" width="3" height="7"></rect><rect x="382" y="21" width="3" height="3"></rect><rect x="396" y="21" width="3" height="10"></rect><rect x="410" y="21" width="3" height="4"></rect><rect x="424" y="21" width="3" height="6"></rect></g>
+        </svg>
+        <div class="cap" style="width: 92px; text-align: right; color: rgba(245,241,232,0.5); white-space: nowrap;">909 · 4/4</div>
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="rgba(245,241,232,0.55)" stroke-width="1.3" stroke-linecap="round"><path d="M16 18h4l5-4v16l-5-4h-4z"></path><path d="M28 18a5 5 0 0 1 0 8"></path></svg>
+      </div>
+
+      <div class="row">
+        <div class="dot" style="background: #F28BB8;"></div>
+        <div style="width: 48px; font-size: 14px; font-weight: 400; color: rgba(245,241,232,0.85);">贝斯</div>
+        <svg width="440" height="40" viewBox="0 0 440 40" style="flex: 1; color: #F28BB8;" class="glow">
+          <path d="M0 20 C 22 6, 44 6, 66 20 S 110 34, 132 20 S 176 6, 198 20 S 242 34, 264 20 S 308 6, 330 20 S 374 34, 396 20 S 430 8, 440 14" fill="none" stroke="currentColor" stroke-width="1.4"></path>
+          <path d="M0 20 C 22 28, 44 28, 66 20 S 110 12, 132 20 S 176 28, 198 20 S 242 12, 264 20 S 308 28, 330 20 S 374 12, 396 20 S 430 26, 440 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.25"></path>
+        </svg>
+        <div class="cap" style="width: 92px; text-align: right; color: rgba(245,241,232,0.5); white-space: nowrap;">lpf 400</div>
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="rgba(245,241,232,0.35)" stroke-width="1.3" stroke-linecap="round"><path d="M16 18h4l5-4v16l-5-4h-4z"></path><path d="M28 18a5 5 0 0 1 0 8"></path></svg>
+      </div>
+
+      <div class="row">
+        <div class="dot" style="background: #6FA8FF;"></div>
+        <div style="width: 48px; font-size: 14px; font-weight: 400; color: rgba(245,241,232,0.85);">旋律</div>
+        <svg width="440" height="40" viewBox="0 0 440 40" style="flex: 1; color: #6FA8FF;" class="glow">
+          <g fill="currentColor"><rect x="10" y="13" width="42" height="1.6"></rect><rect x="64" y="7" width="30" height="1.6"></rect><rect x="106" y="17" width="54" height="1.6"></rect><rect x="180" y="10" width="32" height="1.6"></rect><rect x="222" y="15" width="46" height="1.6"></rect><rect x="284" y="6" width="28" height="1.6"></rect><rect x="326" y="13" width="60" height="1.6"></rect><rect x="398" y="9" width="32" height="1.6"></rect></g>
+          <g fill="currentColor" opacity="0.22"><rect x="10" y="26" width="42" height="1.6"></rect><rect x="64" y="32" width="30" height="1.6"></rect><rect x="106" y="22" width="54" height="1.6"></rect><rect x="180" y="29" width="32" height="1.6"></rect><rect x="222" y="24" width="46" height="1.6"></rect><rect x="284" y="33" width="28" height="1.6"></rect><rect x="326" y="26" width="60" height="1.6"></rect><rect x="398" y="30" width="32" height="1.6"></rect></g>
+        </svg>
+        <div class="cap" style="width: 92px; text-align: right; color: rgba(245,241,232,0.5); white-space: nowrap;">F min</div>
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="rgba(245,241,232,0.35)" stroke-width="1.3" stroke-linecap="round"><path d="M16 18h4l5-4v16l-5-4h-4z"></path><path d="M28 18a5 5 0 0 1 0 8"></path></svg>
+      </div>
+
+      <div class="row">
+        <div class="dot" style="background: #B8C0FF;"></div>
+        <div style="width: 48px; font-size: 14px; font-weight: 400; color: rgba(245,241,232,0.85);">氛围</div>
+        <svg width="440" height="40" viewBox="0 0 440 40" style="flex: 1; color: #B8C0FF;">
+          <defs><linearGradient id="padM" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#B8C0FF" stop-opacity="0"></stop><stop offset="50%" stop-color="#B8C0FF" stop-opacity="0.7"></stop><stop offset="100%" stop-color="#B8C0FF" stop-opacity="0"></stop></linearGradient></defs>
+          <ellipse cx="220" cy="15" rx="210" ry="6" fill="url(#padM)"></ellipse>
+          <ellipse cx="220" cy="27" rx="210" ry="4" fill="url(#padM)" opacity="0.3"></ellipse>
+        </svg>
+        <div class="cap" style="width: 92px; text-align: right; color: rgba(245,241,232,0.5); white-space: nowrap;">room .8</div>
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="rgba(245,241,232,0.35)" stroke-width="1.3" stroke-linecap="round"><path d="M16 18h4l5-4v16l-5-4h-4z"></path><path d="M28 18a5 5 0 0 1 0 8"></path></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT · frosted panel -->
+  <div style="position: absolute; top: 76px; right: 0; width: 478px; bottom: 0; background: linear-gradient(180deg, rgba(10,11,30,0.42), rgba(10,11,30,0.62)); backdrop-filter: blur(28px); border-left: 1px solid rgba(255,255,255,0.08); box-shadow: inset 1px 0 0 rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 30px; padding: 30px 36px 30px;">
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div class="cap">一句话 · 点一下就生效</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <div class="chip on">更暗一点</div>
+        <div class="chip">更亮</div>
+        <div class="chip">再快一点</div>
+        <div class="chip">再慢一点</div>
+        <div class="chip">加鼓</div>
+        <div class="chip">更多混响</div>
+        <div class="chip">更空</div>
+        <div class="chip hot">来个 Drop</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div class="cap">风格 · 已预生成 · 零等待</div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+        <div style="height: 76px; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(160deg, rgba(245,158,66,0.55), rgba(242,139,184,0.35) 60%, rgba(20,18,42,0.2)); border: 1px solid rgba(246,200,95,0.45); box-shadow: inset 0 1px 0 rgba(255,236,190,0.35), 0 10px 30px rgba(245,158,66,0.16);"><div style="font-size: 14px; font-weight: 500;">lo-fi</div><div class="mono" style="font-size: 9px; color: rgba(245,241,232,0.6);">82 bpm</div></div>
+        <div style="height: 76px; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(160deg, rgba(23,123,255,0.28), rgba(184,192,255,0.10) 60%, rgba(20,18,42,0.2)); border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);"><div style="font-size: 14px; color: rgba(245,241,232,0.9);">techno</div><div class="mono" style="font-size: 9px; color: rgba(245,241,232,0.45);">132 bpm</div></div>
+        <div style="height: 76px; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(160deg, rgba(246,200,95,0.26), rgba(255,115,90,0.12) 60%, rgba(20,18,42,0.2)); border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);"><div style="font-size: 14px; color: rgba(245,241,232,0.9);">house</div><div class="mono" style="font-size: 9px; color: rgba(245,241,232,0.45);">124 bpm</div></div>
+        <div style="height: 76px; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(160deg, rgba(111,168,255,0.26), rgba(242,139,184,0.12) 60%, rgba(20,18,42,0.2)); border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);"><div style="font-size: 14px; color: rgba(245,241,232,0.9);">deep house</div><div class="mono" style="font-size: 9px; color: rgba(245,241,232,0.45);">100 bpm</div></div>
+        <div style="height: 76px; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(160deg, rgba(184,192,255,0.22), rgba(16,42,107,0.25) 60%, rgba(20,18,42,0.2)); border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);"><div style="font-size: 14px; color: rgba(245,241,232,0.9);">ambient</div><div class="mono" style="font-size: 9px; color: rgba(245,241,232,0.45);">70 bpm</div></div>
+        <div style="height: 76px; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(160deg, rgba(255,115,90,0.26), rgba(246,200,95,0.10) 60%, rgba(20,18,42,0.2)); border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);"><div style="font-size: 14px; color: rgba(245,241,232,0.9);">国风电子</div><div class="mono" style="font-size: 9px; color: rgba(245,241,232,0.45);">110 bpm</div></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div class="cap">宏 · 手势 / 手机 / MIDI 推这四个</div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><svg width="82" height="82" viewBox="0 0 82 82"><circle cx="41" cy="41" r="34" fill="none" stroke="rgba(245,241,232,0.08)" stroke-width="1.5"></circle><path d="M 17 65 A 34 34 0 1 1 68 58" fill="none" stroke="#F6C85F" stroke-width="1.5" stroke-linecap="round" style="filter: drop-shadow(0 0 6px rgba(246,200,95,0.8));"></path><circle cx="68" cy="58" r="3" fill="#FFF3D0"></circle><text x="41" y="47" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="400" font-size="17" fill="#F5F1E8">72</text></svg><div style="font-size: 12px; color: rgba(245,241,232,0.7);">滤波</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><svg width="82" height="82" viewBox="0 0 82 82"><circle cx="41" cy="41" r="34" fill="none" stroke="rgba(245,241,232,0.08)" stroke-width="1.5"></circle><path d="M 17 65 A 34 34 0 0 1 41 7" fill="none" stroke="#F28BB8" stroke-width="1.5" stroke-linecap="round" style="filter: drop-shadow(0 0 6px rgba(242,139,184,0.8));"></path><circle cx="41" cy="7" r="3" fill="#FFE1EE"></circle><text x="41" y="47" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="400" font-size="17" fill="#F5F1E8">45</text></svg><div style="font-size: 12px; color: rgba(245,241,232,0.7);">能量</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><svg width="82" height="82" viewBox="0 0 82 82"><circle cx="41" cy="41" r="34" fill="none" stroke="rgba(245,241,232,0.08)" stroke-width="1.5"></circle><path d="M 17 65 A 34 34 0 0 1 10 30" fill="none" stroke="#6FA8FF" stroke-width="1.5" stroke-linecap="round" style="filter: drop-shadow(0 0 6px rgba(111,168,255,0.8));"></path><circle cx="10" cy="30" r="3" fill="#DCE8FF"></circle><text x="41" y="47" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="400" font-size="17" fill="#F5F1E8">20</text></svg><div style="font-size: 12px; color: rgba(245,241,232,0.7);">空间</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><svg width="82" height="82" viewBox="0 0 82 82"><circle cx="41" cy="41" r="34" fill="none" stroke="rgba(245,241,232,0.08)" stroke-width="1.5"></circle><path d="M 17 65 A 34 34 0 1 1 65 65" fill="none" stroke="#B8C0FF" stroke-width="1.5" stroke-linecap="round" style="filter: drop-shadow(0 0 6px rgba(184,192,255,0.8));"></path><circle cx="65" cy="65" r="3" fill="#ECEEFF"></circle><text x="41" y="47" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="400" font-size="17" fill="#F5F1E8">60</text></svg><div style="font-size: 12px; color: rgba(245,241,232,0.7);">密度</div></div>
+      </div>
+    </div>
+
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; height: 48px; border-bottom: 1px solid rgba(245,241,232,0.18);">
+        <div style="width: 1px; height: 18px; background: #F6C85F;"></div>
+        <div style="font-size: 14px; font-weight: 300; color: rgba(245,241,232,0.5); flex: 1;">或者打字：Berghain 风格，132 BPM，贝斯加侧链</div>
+        <div class="cap" style="color: rgba(245,241,232,0.35);">Enter</div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 18px; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 11px; color: rgba(245,241,232,0.7);"><div class="dot" style="width: 5px; height: 5px; background: #A8D672; box-shadow: 0 0 8px #A8D672;"></div>语音</div>
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 11px; color: rgba(245,241,232,0.7);"><div class="dot" style="width: 5px; height: 5px; background: #A8D672; box-shadow: 0 0 8px #A8D672;"></div>手势</div>
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 11px; color: rgba(245,241,232,0.7);"><div class="dot" style="width: 5px; height: 5px; background: #F6C85F; box-shadow: 0 0 8px #F6C85F;"></div>手机 ×2</div>
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 11px; color: rgba(245,241,232,0.4);"><div class="dot" style="width: 5px; height: 5px; background: rgba(245,241,232,0.25);"></div>MIDI</div>
+        </div>
+        <div class="cap" style="color: rgba(245,241,232,0.5);">&lt;/&gt; 代码</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

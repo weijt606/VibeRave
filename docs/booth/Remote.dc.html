@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&family=Courier+Prime:wght@400;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #07091F; font-family: "Noto Sans SC", "PingFang SC", system-ui, sans-serif; color: #F5F1E8; -webkit-font-smoothing: antialiased; }
+    a { color: #F28BB8; } a:hover { color: #F5F1E8; }
+    .cap { font-family: "Courier Prime", "Courier New", monospace; font-size: 10.5px; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(245,241,232,0.45); }
+    .chip { height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 14px; font-size: 16px; font-weight: 400; color: rgba(245,241,232,0.88); background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035)); border: 1px solid rgba(255,255,255,0.10); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14); }
+    .chip.hot { color: #FFC9BB; background: linear-gradient(180deg, rgba(255,115,90,0.26), rgba(255,115,90,0.08)); border-color: rgba(255,115,90,0.40); box-shadow: inset 0 1px 0 rgba(255,200,180,0.30), 0 0 28px rgba(255,115,90,0.18); font-weight: 500; }
+  </style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: linear-gradient(180deg, #04061A 0%, #0B1236 55%, #2A1A3E 100%); font-family: 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif; color: #F5F1E8; display: flex; flex-direction: column;">
+
+  <div style="position: absolute; left: -100px; top: 560px; width: 600px; height: 460px; border-radius: 50%; background: radial-gradient(closest-side, rgba(242,139,184,0.6), rgba(245,158,66,0.28) 50%, rgba(0,0,0,0) 100%); filter: blur(60px); mix-blend-mode: screen; pointer-events: none;"></div>
+  <div style="position: absolute; right: -160px; top: -160px; width: 420px; height: 360px; border-radius: 50%; background: radial-gradient(closest-side, rgba(23,123,255,0.28), rgba(0,0,0,0) 100%); filter: blur(60px); mix-blend-mode: screen; pointer-events: none;"></div>
+  <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 90% 70% at 50% 50%, rgba(0,0,0,0) 50%, rgba(2,3,12,0.5) 100%); pointer-events: none;"></div>
+  <svg width="390" height="844" viewBox="0 0 390 844" style="position: absolute; inset: 0; opacity: 0.28; mix-blend-mode: overlay; pointer-events: none;">
+    <filter id="grainR"><feTurbulence type="fractalNoise" baseFrequency="0.95" numOctaves="3" stitchTiles="stitch"></feTurbulence><feColorMatrix type="saturate" values="0"></feColorMatrix><feComponentTransfer><feFuncR type="linear" slope="2.2" intercept="-0.6"></feFuncR><feFuncG type="linear" slope="2.2" intercept="-0.6"></feFuncG><feFuncB type="linear" slope="2.2" intercept="-0.6"></feFuncB></feComponentTransfer></filter>
+    <rect width="390" height="844" filter="url(#grainR)"></rect>
+  </svg>
+
+  <div style="position: relative; padding: 52px 26px 0; display: flex; flex-direction: column; gap: 8px;">
+    <div class="cap">你在控制</div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 10px; height: 10px; border-radius: 50%; background: #F28BB8; box-shadow: 0 0 14px #F28BB8;"></div>
+      <div style="font-size: 30px; font-weight: 300; letter-spacing: 0.01em;">贝斯 · 阿杰</div>
+    </div>
+    <div class="cap" style="color: rgba(245,241,232,0.35);">124 bpm · 大屏第二条光带 · 用你手机的麦克风</div>
+  </div>
+
+  <!-- XY pad -->
+  <div style="position: relative; margin: 22px 26px 0; height: 200px; border-radius: 18px; background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.10); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); overflow: hidden;">
+    <svg width="338" height="200" viewBox="0 0 338 200" style="position: absolute; inset: 0;">
+      <line x1="169" y1="0" x2="169" y2="200" stroke="#F5F1E8" stroke-opacity="0.07"></line>
+      <line x1="0" y1="100" x2="338" y2="100" stroke="#F5F1E8" stroke-opacity="0.07"></line>
+    </svg>
+    <div style="position: absolute; left: 226px; top: 78px; width: 120px; height: 120px; margin-left: -60px; margin-top: -60px; border-radius: 50%; background: radial-gradient(closest-side, rgba(242,139,184,0.7), rgba(242,139,184,0) 100%); filter: blur(14px); mix-blend-mode: screen;"></div>
+    <div style="position: absolute; left: 226px; top: 78px; width: 30px; height: 30px; margin-left: -15px; margin-top: -15px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #FFE8F2, #F28BB8 70%, #E06A9C 100%); box-shadow: 0 0 20px rgba(242,139,184,0.8);"></div>
+    <div class="cap" style="position: absolute; left: 16px; top: 14px;">↑ 滤波打开</div>
+    <div class="cap" style="position: absolute; right: 16px; bottom: 14px;">能量 →</div>
+    <div class="cap" style="position: absolute; left: 16px; bottom: 14px; color: rgba(245,241,232,0.3);">或者转手机</div>
+  </div>
+
+  <div style="position: relative; padding: 18px 26px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+    <div class="chip">更暗一点</div>
+    <div class="chip">更亮</div>
+    <div class="chip">再快一点</div>
+    <div class="chip">更多混响</div>
+    <div class="chip">换个音色</div>
+    <div class="chip hot">来个 Drop</div>
+  </div>
+
+  <div style="position: relative; margin-top: auto; padding: 0 26px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+    <div style="position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;">
+      <div style="position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin-left: -130px; margin-top: -130px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,115,90,0.55), rgba(245,158,66,0.25) 50%, rgba(0,0,0,0) 100%); filter: blur(30px); mix-blend-mode: screen;"></div>
+      <div style="position: absolute; left: 50%; top: 50%; width: 160px; height: 160px; margin-left: -80px; margin-top: -80px; border-radius: 50%; background: radial-gradient(closest-side, rgba(246,200,95,0.85), rgba(255,115,90,0.4) 60%, rgba(0,0,0,0) 100%); filter: blur(14px); mix-blend-mode: screen;"></div>
+      <div style="position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin-left: -60px; margin-top: -60px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #FFF8E8 0%, #FBDA8A 30%, #F6B45A 56%, #F0865E 80%, rgba(242,139,184,0.85) 93%, rgba(242,139,184,0) 100%);"></div>
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px;">
+        <div style="font-size: 17px; font-weight: 500; letter-spacing: 0.06em; color: #2A1608;">按住说话</div>
+        <div class="cap" style="font-size: 9px; color: rgba(42,22,8,0.6);">Hold</div>
+      </div>
+    </div>
+        <div style="display: flex; gap: 28px; height: 44px; align-items: center; font-size: 14px; font-weight: 300; color: rgba(245,241,232,0.7);">
+      <span>静音我这条</span><span style="width: 1px; height: 14px; background: rgba(245,241,232,0.2);"></span><span>让给下一位</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

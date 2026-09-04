@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&family=Courier+Prime:wght@400;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #F5F1E8; font-family: "Noto Sans SC", "PingFang SC", system-ui, sans-serif; color: #1A1714; -webkit-font-smoothing: antialiased; }
+    a { color: #177BFF; } a:hover { color: #102A6B; }
+    .cap { font-family: "Courier Prime", "Courier New", monospace; font-size: 10.5px; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(26,23,20,0.45); }
+    .tile { background: rgba(255,255,255,0.86); border-radius: 16px; box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 10px 30px rgba(16,42,107,0.07), 0 1px 2px rgba(16,42,107,0.05); }
+    .chip { height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-size: 17px; font-weight: 500; color: #1A1714; background: rgba(255,255,255,0.86); box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 10px 30px rgba(16,42,107,0.07), 0 1px 2px rgba(16,42,107,0.05); }
+    .chip.on { background: linear-gradient(180deg, #9ADDF3, #82CFEA); color: #0D2A5B; box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 12px 30px rgba(130,207,234,0.35); }
+    .row { display: flex; align-items: center; gap: 18px; height: 66px; padding: 0 12px 0 16px; border-top: 1px solid rgba(26,23,20,0.08); position: relative; }
+    .row.sel { background: linear-gradient(90deg, rgba(130,207,234,0.22), rgba(130,207,234,0) 60%); border-radius: 12px; border-top-color: transparent; }
+    .genre { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; background: rgba(255,255,255,0.86); box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 10px 30px rgba(16,42,107,0.07), 0 1px 2px rgba(16,42,107,0.05); }
+    .genre.on { background: linear-gradient(180deg, #FBD97A, #F6C85F); box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 12px 30px rgba(246,200,95,0.4); }
+  </style>
+</helmet>
+<div style="position: relative; width: 1194px; height: 834px; overflow: hidden; background: linear-gradient(180deg, #FBF8F1 0%, #F5F1E8 60%, #F2EBE0 100%); font-family: 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif; color: #1A1714;">
+
+  <!-- daylight leaks -->
+  <div style="position: absolute; left: -100px; top: 320px; width: 900px; height: 600px; border-radius: 50%; background: radial-gradient(closest-side, rgba(246,200,95,0.55), rgba(245,158,66,0.2) 50%, rgba(0,0,0,0) 100%); filter: blur(70px); pointer-events: none;"></div>
+  <div style="position: absolute; right: -200px; top: -240px; width: 760px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(130,207,234,0.5), rgba(0,0,0,0) 100%); filter: blur(80px); pointer-events: none;"></div>
+  <div style="position: absolute; right: 200px; bottom: -200px; width: 520px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, rgba(168,214,114,0.35), rgba(0,0,0,0) 100%); filter: blur(70px); pointer-events: none;"></div>
+  <svg width="1194" height="834" viewBox="0 0 1194 834" style="position: absolute; inset: 0; opacity: 0.16; mix-blend-mode: multiply; pointer-events: none;">
+    <filter id="grainK"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"></feTurbulence><feColorMatrix type="saturate" values="0"></feColorMatrix></filter>
+    <rect width="1194" height="834" filter="url(#grainK)"></rect>
+  </svg>
+  <!-- palm shadow -->
+  <svg width="520" height="520" viewBox="0 0 420 420" style="position: absolute; right: -90px; top: -60px; opacity: 0.09; filter: blur(2px); pointer-events: none;" fill="#102A6B">
+    <path d="M210 400 C 200 300, 190 200, 220 60 C 230 120, 236 200, 232 300 Z"></path>
+    <path d="M214 330 C 150 280, 90 250, 30 260 C 100 240, 170 250, 226 300 Z"></path>
+    <path d="M216 300 C 280 240, 340 210, 400 230 C 330 215, 260 240, 224 290 Z"></path>
+    <path d="M212 250 C 160 190, 120 150, 70 140 C 130 130, 190 170, 222 230 Z"></path>
+    <path d="M218 230 C 260 170, 320 130, 380 130 C 320 140, 270 180, 226 240 Z"></path>
+  </svg>
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 36px;">
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <svg width="22" height="22" viewBox="0 0 28 28" fill="none" stroke="#F59E42" stroke-width="1.5" stroke-linecap="round"><line x1="14" y1="2" x2="14" y2="8"></line><line x1="14" y1="20" x2="14" y2="26"></line><line x1="2" y1="14" x2="8" y2="14"></line><line x1="20" y1="14" x2="26" y2="14"></line><line x1="5.5" y1="5.5" x2="9.8" y2="9.8"></line><line x1="18.2" y1="18.2" x2="22.5" y2="22.5"></line><line x1="22.5" y1="5.5" x2="18.2" y2="9.8"></line><line x1="9.8" y1="18.2" x2="5.5" y2="22.5"></line></svg>
+      <div style="font-family: 'Unbounded', sans-serif; font-weight: 500; font-size: 13px; letter-spacing: 0.30em;">VIBERAVE</div>
+      <div class="cap">儿童模式 · 白天 Day</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 28px;">
+      <div style="display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(26,23,20,0.05); border: 1px solid rgba(26,23,20,0.06);">
+        <div style="height: 38px; padding: 0 18px; display: flex; align-items: center; border-radius: 999px; color: rgba(26,23,20,0.55); font-size: 13px;">成人</div>
+        <div style="height: 38px; padding: 0 18px; display: flex; align-items: center; border-radius: 999px; background: #1A1714; color: #F5F1E8; font-size: 13px; font-weight: 500;">儿童</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; height: 44px; font-size: 13px; color: rgba(26,23,20,0.7);">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.6"></path><path d="M13 2v3h-3"></path></svg>
+        下一位
+      </div>
+    </div>
+  </div>
+
+  <div style="position: absolute; top: 76px; left: 0; width: 716px; bottom: 0;">
+    <div style="position: absolute; left: 36px; top: 20px; display: flex; flex-direction: column; gap: 10px; width: 330px;">
+      <div class="cap">听到</div>
+      <div style="font-size: 27px; font-weight: 400; line-height: 1.35; text-wrap: balance;">“小猫在跳舞，<br>快一点”</div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px;">
+        <div style="width: 7px; height: 7px; border-radius: 50%; background: #F59E42; box-shadow: 0 0 10px rgba(245,158,66,0.8);"></div>
+        <div style="font-size: 13px; color: rgba(26,23,20,0.65);">AI 正在把小鼓打快一点 · 120 拍</div>
+      </div>
+    </div>
+    <div style="position: absolute; right: 36px; top: 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+      <div class="cap">正在用的乐器</div>
+      <div style="display: flex; gap: 8px;">
+        <div class="tile" style="width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#177BFF" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="7" width="16" height="10" rx="1.5"></rect><line x1="7" y1="7" x2="7" y2="13"></line><line x1="11" y1="7" x2="11" y2="13"></line><line x1="15" y1="7" x2="15" y2="13"></line></svg></div>
+        <div class="tile" style="width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#6C9E2E" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="5" width="14" height="12" rx="1.5"></rect><line x1="4" y1="9" x2="18" y2="9"></line><line x1="4" y1="13" x2="18" y2="13"></line><line x1="8" y1="5" x2="8" y2="17"></line><line x1="14" y1="5" x2="14" y2="17"></line></svg></div>
+        <div class="tile" style="width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#E08A2C" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><circle cx="11" cy="11" r="2.5"></circle></svg></div>
+      </div>
+    </div>
+
+    <!-- sun -->
+    <div style="position: absolute; left: 0; width: 716px; top: 0; height: 400px; pointer-events: none;">
+      <div style="position: absolute; left: 358px; top: 250px; width: 520px; height: 400px; margin-left: -260px; margin-top: -200px; border-radius: 50%; background: radial-gradient(closest-side, rgba(246,200,95,0.55), rgba(245,158,66,0.18) 50%, rgba(0,0,0,0) 100%); filter: blur(50px);"></div>
+      <div style="position: absolute; left: 358px; top: 250px; width: 290px; height: 290px; margin-left: -145px; margin-top: -145px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,232,160,0.9), rgba(246,200,95,0.5) 60%, rgba(0,0,0,0) 100%); filter: blur(22px);"></div>
+      <div style="position: absolute; left: 358px; top: 250px; width: 210px; height: 210px; margin-left: -105px; margin-top: -105px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #FFFBEE 0%, #FCE49A 32%, #F6C85F 62%, #F5A94A 86%, rgba(245,158,66,0.8) 94%, rgba(245,158,66,0) 100%); box-shadow: 0 20px 50px rgba(245,158,66,0.25);"></div>
+      <svg width="716" height="400" viewBox="0 0 716 400" style="position: absolute; inset: 0;">
+        <circle cx="358" cy="250" r="150" fill="none" stroke="#82CFEA" stroke-opacity="0.45" stroke-width="1" stroke-dasharray="1 9" stroke-linecap="round"></circle>
+        <circle cx="358" cy="250" r="196" fill="none" stroke="#A8D672" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="1 11" stroke-linecap="round"></circle>
+      </svg>
+    </div>
+    <div style="position: absolute; left: 0; right: 0; top: 344px; height: 1px; background: linear-gradient(90deg, rgba(23,123,255,0) 0%, rgba(23,123,255,0.35) 30%, rgba(23,123,255,0.35) 70%, rgba(23,123,255,0) 100%); pointer-events: none;"></div>
+    <div style="position: absolute; left: 0; width: 716px; top: 345px; height: 100px; overflow: hidden; pointer-events: none; -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0)); mask-image: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0));">
+      <div style="position: absolute; left: 358px; top: -90px; width: 300px; height: 200px; margin-left: -150px; border-radius: 50%; background: radial-gradient(closest-side, rgba(246,200,95,0.6), rgba(130,207,234,0.25) 60%, rgba(0,0,0,0) 100%); filter: blur(16px); transform: scaleY(0.55);"></div>
+      <div style="position: absolute; left: 140px; right: 140px; top: 0; height: 100px; background: repeating-linear-gradient(180deg, rgba(245,158,66,0.35) 0 1.5px, rgba(0,0,0,0) 1.5px 7px); -webkit-mask-image: radial-gradient(ellipse 50% 100% at 50% 0%, #000, rgba(0,0,0,0)); mask-image: radial-gradient(ellipse 50% 100% at 50% 0%, #000, rgba(0,0,0,0));"></div>
+    </div>
+    <div style="position: absolute; left: 0; width: 716px; top: 224px; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none;">
+      <div style="font-size: 21px; font-weight: 700; letter-spacing: 0.06em; color: #3A2208;">按住说话</div>
+      <div class="cap" style="font-size: 9.5px; color: rgba(58,34,8,0.6);">说：小猫在跳舞</div>
+    </div>
+
+    <div style="position: absolute; left: 36px; right: 28px; top: 452px; bottom: 0; display: flex; flex-direction: column;">
+      <div class="cap" style="padding: 0 0 10px 16px;">乐队里的三个人</div>
+      <div class="row sel">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #82CFEA; box-shadow: 0 0 8px rgba(130,207,234,0.9);"></div>
+        <div style="width: 56px; font-size: 15px; font-weight: 700;">钢琴</div>
+        <svg width="420" height="40" viewBox="0 0 420 40" style="flex: 1;"><g fill="#177BFF"><rect x="10" y="12" width="40" height="5" rx="2.5"></rect><rect x="60" y="6" width="28" height="5" rx="2.5"></rect><rect x="100" y="16" width="52" height="5" rx="2.5"></rect><rect x="164" y="9" width="30" height="5" rx="2.5"></rect><rect x="206" y="14" width="44" height="5" rx="2.5"></rect><rect x="262" y="5" width="26" height="5" rx="2.5"></rect><rect x="300" y="12" width="58" height="5" rx="2.5"></rect><rect x="370" y="8" width="30" height="5" rx="2.5"></rect></g><g fill="#177BFF" opacity="0.2"><rect x="10" y="26" width="40" height="5" rx="2.5"></rect><rect x="60" y="31" width="28" height="5" rx="2.5"></rect><rect x="100" y="23" width="52" height="5" rx="2.5"></rect><rect x="164" y="29" width="30" height="5" rx="2.5"></rect><rect x="206" y="25" width="44" height="5" rx="2.5"></rect><rect x="262" y="32" width="26" height="5" rx="2.5"></rect><rect x="300" y="26" width="58" height="5" rx="2.5"></rect><rect x="370" y="30" width="30" height="5" rx="2.5"></rect></g></svg>
+        <div style="font-size: 13px; color: rgba(26,23,20,0.55); width: 64px; height: 44px; display: flex; align-items: center; justify-content: flex-end;">先安静</div>
+      </div>
+      <div class="row">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #A8D672;"></div>
+        <div style="width: 56px; font-size: 15px; font-weight: 500; color: rgba(26,23,20,0.85);">小鼓</div>
+        <svg width="420" height="40" viewBox="0 0 420 40" style="flex: 1;"><g fill="#6C9E2E"><rect x="6" y="6" width="6" height="14" rx="3"></rect><rect x="30" y="14" width="6" height="6" rx="3"></rect><rect x="54" y="6" width="6" height="14" rx="3"></rect><rect x="78" y="14" width="6" height="6" rx="3"></rect><rect x="102" y="6" width="6" height="14" rx="3"></rect><rect x="126" y="14" width="6" height="6" rx="3"></rect><rect x="150" y="6" width="6" height="14" rx="3"></rect><rect x="174" y="14" width="6" height="6" rx="3"></rect><rect x="198" y="6" width="6" height="14" rx="3"></rect><rect x="222" y="14" width="6" height="6" rx="3"></rect><rect x="246" y="6" width="6" height="14" rx="3"></rect><rect x="270" y="14" width="6" height="6" rx="3"></rect><rect x="294" y="6" width="6" height="14" rx="3"></rect><rect x="318" y="14" width="6" height="6" rx="3"></rect><rect x="342" y="6" width="6" height="14" rx="3"></rect><rect x="366" y="14" width="6" height="6" rx="3"></rect><rect x="390" y="6" width="6" height="14" rx="3"></rect></g><g fill="#6C9E2E" opacity="0.2"><rect x="6" y="21" width="6" height="10" rx="3"></rect><rect x="54" y="21" width="6" height="10" rx="3"></rect><rect x="102" y="21" width="6" height="10" rx="3"></rect><rect x="150" y="21" width="6" height="10" rx="3"></rect><rect x="198" y="21" width="6" height="10" rx="3"></rect><rect x="246" y="21" width="6" height="10" rx="3"></rect><rect x="294" y="21" width="6" height="10" rx="3"></rect><rect x="342" y="21" width="6" height="10" rx="3"></rect><rect x="390" y="21" width="6" height="10" rx="3"></rect></g></svg>
+        <div style="font-size: 13px; color: rgba(26,23,20,0.55); width: 64px; height: 44px; display: flex; align-items: center; justify-content: flex-end;">先安静</div>
+      </div>
+      <div class="row">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #F6C85F;"></div>
+        <div style="width: 56px; font-size: 15px; font-weight: 500; color: rgba(26,23,20,0.85);">木琴</div>
+        <svg width="420" height="40" viewBox="0 0 420 40" style="flex: 1;"><path d="M0 20 C 25 4, 50 4, 75 20 S 125 36, 150 20 S 200 4, 225 20 S 275 36, 300 20 S 350 4, 375 20 L 420 20" fill="none" stroke="#E08A2C" stroke-width="2.4" stroke-linecap="round"></path></svg>
+        <div style="font-size: 13px; color: rgba(26,23,20,0.55); width: 64px; height: 44px; display: flex; align-items: center; justify-content: flex-end;">先安静</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: absolute; top: 76px; right: 0; width: 478px; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0.40), rgba(255,255,255,0.55)); backdrop-filter: blur(28px); border-left: 1px solid rgba(255,255,255,0.7); display: flex; flex-direction: column; gap: 28px; padding: 30px 36px;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div class="cap">试试说</div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+        <div class="chip on">快一点</div>
+        <div class="chip">慢一点</div>
+        <div class="chip">加小鼓</div>
+        <div class="chip">加钢琴</div>
+        <div class="chip">更欢快</div>
+        <div class="chip">安静一点</div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div class="cap">今天想做什么歌</div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+        <div class="genre on"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="#3A2208" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 20V8l10-2v12"></path><circle cx="7.5" cy="20" r="2.5"></circle><circle cx="17.5" cy="18" r="2.5"></circle></svg>儿歌</div>
+        <div class="genre"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="#1A1714" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 15a7 7 0 1 1-7-7c0 4 3 7 7 7z"></path></svg>摇篮曲</div>
+        <div class="genre"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="#1A1714" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18h18"></path><path d="M8 18v-6l6-4 6 4v6"></path><path d="M12 18v-4h4v4"></path></svg>进行曲</div>
+        <div class="genre"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="#1A1714" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v20"></path><path d="M6 12c4-4 12-4 16 0"></path><path d="M6 16c4 4 12 4 16 0"></path></svg>圆舞曲</div>
+        <div class="genre"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="#1A1714" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l6-10 5 6 3-3 6 7z"></path></svg>动画追逐</div>
+        <div class="genre"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="#1A1714" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="18" height="12" rx="2"></rect><path d="M9 13v4M7 15h4"></path><circle cx="18" cy="14" r="1"></circle><circle cx="20" cy="17" r="1"></circle></svg>8-bit 游戏</div>
+        <div class="genre"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="#1A1714" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="15" r="6"></circle><path d="M9 11l-3-4M19 11l3-4M14 21v3"></path></svg>动物狂欢</div>
+        <div class="genre"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="#1A1714" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c4 4 5 10 2 16l-2 4-2-4c-3-6-2-12 2-16z"></path><circle cx="14" cy="12" r="2"></circle></svg>太空探险</div>
+      </div>
+    </div>
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 14px;">
+      <div class="cap">今天学到的</div>
+      <div style="display: flex; gap: 10px;">
+        <div class="tile" style="flex: 1; padding: 14px 16px;"><div style="font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 400; color: #177BFF;">120</div><div style="font-size: 12px; color: rgba(26,23,20,0.6); margin-top: 4px;">每分钟拍数</div></div>
+        <div class="tile" style="flex: 1; padding: 14px 16px;"><div style="font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 400; color: #E08A2C;">C 大调</div><div style="font-size: 12px; color: rgba(26,23,20,0.6); margin-top: 4px;">听起来开心的调</div></div>
+        <div class="tile" style="flex: 1; padding: 14px 16px;"><div style="font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 400; color: #6C9E2E;">4/4</div><div style="font-size: 12px; color: rgba(26,23,20,0.6); margin-top: 4px;">一小节数四下</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
