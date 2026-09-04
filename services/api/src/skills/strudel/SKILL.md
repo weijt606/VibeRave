@@ -71,26 +71,34 @@ specialise earlier ones:
 12. `rules/cannot-handle.md`
 13. `rules/meta-commands.md`
 14. `rules/error-recovery.md`
-15. `reference/sounds.md`
-16. `reference/mini-notation.md`
-17. `reference/pattern-transforms.md`
-18. `reference/effects.md`
-19. `reference/modulation.md`
-20. `reference/tempo.md`
-21. `reference/tonal.md` — chord(), voicing(), mode(), anchor()
-22. `reference/visualization.md`
-23. `reference/dual-deck.md` — stereo split / DJ mode
-24. `recipes/generate.md`
-25. `recipes/explain.md`
-26. `recipes/debug.md`
-27. `recipes/vary.md`
-28. `examples/genres.md`
-29. `examples/techniques.md`
-30. `examples/complex.md`
-31. `examples/kids.md`
+15. `rules/siblings.md` — booth: other tracks' one-line summaries (`<siblings>`)
+16. `reference/sounds.md`
+17. `reference/mini-notation.md`
+18. `reference/pattern-transforms.md`
+19. `reference/effects.md`
+20. `reference/modulation.md`
+21. `reference/tempo.md`
+22. `reference/tonal.md` — chord(), voicing(), mode(), anchor()
+23. `reference/visualization.md`
+24. `reference/dual-deck.md` — stereo split / DJ mode
+25. `recipes/generate.md`
+26. `recipes/explain.md`
+27. `recipes/debug.md`
+28. `recipes/vary.md`
+29. `examples/genres.md`
+30. `examples/techniques.md`
+31. `examples/complex.md`
+32. `examples/kids.md`
 
-(This list mirrors `SKILL_FILES` in `services/api/src/index.mjs` — keep the
-two in sync when adding a file.)
+(This list mirrors `SKILL_ORDER` in
+`services/api/src/infrastructure/skill-prompt.mjs` — keep the two in sync
+when adding a file. The booth's `intent: 'tweak'` requests use the much
+smaller `TWEAK_ORDER` subset: output-format, iteration, error-recovery,
+meta-commands, siblings, plus family-mode when `mode: 'kids'`.)
+
+The host prepends a short block before file 1: booth mode (family mode
+forced ON / OFF) and the `EXPLAIN:` line language — see
+`rules/output-format.md`.
 
 The minimum viable system prompt is **rules + reference/sounds +
 reference/mini-notation + reference/pattern-transforms + examples/genres**.

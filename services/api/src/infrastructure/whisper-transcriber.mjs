@@ -2,6 +2,7 @@ import { Whisper, manager } from 'smart-whisper';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isHallucination } from './stt-hallucinations.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -58,16 +59,40 @@ function buildBiasingPrompt(vocab) {
   // gets those right unaided. Trimmed hard to keep total prompt under whisper's
   // 224-token window.
   const distinctive = [
-    'next pattern', 'switch pattern', 'drop the beat', 'build up',
-    'hold tension', 'breakdown',
-    'add kick', 'mute kick', 'add hi hat', 'open hi hat', 'add snare',
-    'add clap', 'only drums',
-    'add bass', 'mute bass', 'more bass', 'deeper bass',
-    'add lead', 'add melody', 'add pad', 'add arp',
-    'open filter', 'close filter', 'more low pass', 'more high pass',
-    'add delay', 'more reverb', 'add echo', 'add distortion',
-    'show waveform', 'show piano roll', 'show pitch wheel',
-    'mute all', 'bring everything back',
+    'next pattern',
+    'switch pattern',
+    'drop the beat',
+    'build up',
+    'hold tension',
+    'breakdown',
+    'add kick',
+    'mute kick',
+    'add hi hat',
+    'open hi hat',
+    'add snare',
+    'add clap',
+    'only drums',
+    'add bass',
+    'mute bass',
+    'more bass',
+    'deeper bass',
+    'add lead',
+    'add melody',
+    'add pad',
+    'add arp',
+    'open filter',
+    'close filter',
+    'more low pass',
+    'more high pass',
+    'add delay',
+    'more reverb',
+    'add echo',
+    'add distortion',
+    'show waveform',
+    'show piano roll',
+    'show pitch wheel',
+    'mute all',
+    'bring everything back',
   ];
   const cmdBlock = `Commands: ${distinctive.join(', ')}.`;
 
@@ -133,47 +158,8 @@ const POST_PROCESS_FIXES = [
   [/(\d+)\s*BPM\b/g, '$1 bpm'],
 ];
 
-// Whisper's medium.en model carries a handful of training-data fillers that
-// it emits whenever it can't ground on real speech — typically when the
-// audio is silent / very short / low-SNR. These show up as confident-looking
-// sentences that have nothing to do with what was said. Rewriting them to
-// '' lets the empty-text guard upstream short-circuit the LLM call and
-// surface "didn't catch that" instead of generating a track from a
-// YouTube outro.
-//
-// The list is anchored to the EXACT decoded text (after trim + lowercase)
-// because a substring match could eat real input ("you" / "thanks").
-//
-// Things INTENTIONALLY not in this list:
-//   - bare "okay." / "bye." — these are real one-word commands a DJ might
-//     say (confirmation / end-of-set). The voicedRatio < 0.10 gate in
-//     transcribe-audio.mjs catches the silence-fed case better than
-//     blanket-rejecting the word.
-//   - bare "you" — same reason; voicedRatio gate handles silence.
-const HALLUCINATION_PHRASES = new Set([
-  'thanks for watching.',
-  'thanks for watching',
-  'thanks for watching and see you next time.',
-  'thank you.',
-  'thank you',
-  'thank you for watching.',
-  'thank you for watching!',
-  'music playing in the background.',
-  'music playing in the background',
-  'music playing.',
-  'music plays.',
-  'sustain, charge, bass, arpeggio.',
-  'beck with us, thank you for your time.',
-  'back with us, thank you for your time.',
-  '1000 tracks.',
-  '.',
-  '...',
-  '. .',
-]);
-function isHallucination(text) {
-  return HALLUCINATION_PHRASES.has(String(text || '').trim().toLowerCase());
-}
-
+// Silence-fed hallucination blocklist (EN + zh) lives in stt-hallucinations.mjs
+// so it is testable without loading the native whisper binding.
 function postProcess(text) {
   if (isHallucination(text)) return '';
   let out = text;
@@ -212,13 +198,7 @@ function postProcess(text) {
  * }} cfg
  * @returns {import('../application/ports.mjs').Transcriber}
  */
-export function createWhisperTranscriber({
-  modelName,
-  gpu,
-  language,
-  offloadSecs,
-  initialPrompt,
-}) {
+export function createWhisperTranscriber({ modelName, gpu, language, offloadSecs, initialPrompt }) {
   let whisper = null;
   let loadPromise = null;
   // Two biasing prompts: pure-English (DEFAULT_DJ_VOCAB) and EN+zh
@@ -291,8 +271,7 @@ export function createWhisperTranscriber({
     async transcribe(pcm, opts = {}) {
       const w = await ensureModel();
       const lang = opts.language || language;
-      const biasingPrompt =
-        overridePrompt || pickBiasPrompt(lang, DEFAULT_DJ_VOCAB, BILINGUAL_DJ_VOCAB);
+      const biasingPrompt = overridePrompt || pickBiasPrompt(lang, DEFAULT_DJ_VOCAB, BILINGUAL_DJ_VOCAB);
       const task = await w.transcribe(pcm, {
         language: lang === 'auto' ? 'auto' : lang,
         format: 'simple',
@@ -304,7 +283,10 @@ export function createWhisperTranscriber({
         initial_prompt: biasingPrompt,
       });
       const segments = await task.result;
-      const raw = segments.map((s) => s.text).join('').trim();
+      const raw = segments
+        .map((s) => s.text)
+        .join('')
+        .trim();
       return { text: postProcess(raw) };
     },
   };

@@ -1,4 +1,5 @@
-import { InvalidInput } from '../domain/errors.mjs';
+import { InvalidInput, PayloadTooLarge } from '../domain/errors.mjs';
+import { createKeyedQueue } from './session-queue.mjs';
 
 const SESSION_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 // How many extra LLM round-trips we'll spend asking the model to fix a
@@ -6,6 +7,12 @@ const SESSION_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 // every transient regression we've seen without blowing the latency
 // budget for the user-visible turn.
 const MAX_VALIDATION_RETRIES = 2;
+const DEFAULT_HISTORY_TURNS = 6;
+const DEFAULT_LIMITS = { maxPromptChars: 500, maxCodeBytes: 20 * 1024 };
+const MODES = new Set(['adult', 'kids']);
+const LANGS = new Set(['zh', 'en']);
+const INTENTS = new Set(['generate', 'tweak']);
+const MAX_TRACKS = 16;
 
 function assertSessionId(id) {
   if (typeof id !== 'string' || !SESSION_ID_RE.test(id)) {
@@ -32,11 +39,52 @@ function toLlmHistory(messages) {
   return out;
 }
 
+/**
+ * Keep only the last `turns` user/assistant pairs (2N messages). META
+ * turns inside the window are kept as-is — they're replayed verbatim so
+ * the model can see (and ignore) past host actions. The window always
+ * starts on a user message so the model never sees a stranded reply.
+ */
+export function windowHistory(turns, historyTurns = DEFAULT_HISTORY_TURNS) {
+  const n = Number.isFinite(historyTurns) && historyTurns > 0 ? Math.floor(historyTurns) : DEFAULT_HISTORY_TURNS;
+  let out = turns.length > n * 2 ? turns.slice(-n * 2) : turns.slice();
+  while (out.length && out[0].role !== 'user') out.shift();
+  return out;
+}
+
+/**
+ * Validate the booth extensions on the request body (CONTRACTS.md §8.2).
+ * Every field is optional; unknown values are a 400 rather than a silent
+ * fallback so a client bug is caught during the build, not on stage.
+ */
+export function normaliseBoothFields({ mode, lang, intent, tracks } = {}) {
+  if (mode !== undefined && !MODES.has(mode)) {
+    throw new InvalidInput("`mode` must be 'adult' or 'kids'.");
+  }
+  if (lang !== undefined && !LANGS.has(lang)) {
+    throw new InvalidInput("`lang` must be 'zh' or 'en'.");
+  }
+  if (intent !== undefined && !INTENTS.has(intent)) {
+    throw new InvalidInput("`intent` must be 'generate' or 'tweak'.");
+  }
+  let siblings;
+  if (tracks !== undefined) {
+    if (!Array.isArray(tracks)) throw new InvalidInput('`tracks` must be an array of { name, summary }.');
+    siblings = tracks.slice(0, MAX_TRACKS).map((t) => {
+      if (!t || typeof t !== 'object' || typeof t.name !== 'string' || typeof t.summary !== 'string') {
+        throw new InvalidInput('`tracks` entries must be { name: string, summary: string }.');
+      }
+      return { name: t.name, summary: t.summary };
+    });
+  }
+  return { mode, lang: lang ?? 'zh', intent: intent ?? 'generate', tracks: siblings };
+}
+
 function buildFixPrompt(error, code) {
   return [
     `[validation error] The previous code failed: ${error}`,
     'Return ONLY the corrected Strudel code (no prose, no fences) that fixes this error.',
-    'Keep the user\'s original intent. Obey all output-format rules.',
+    "Keep the user's original intent. Obey all output-format rules.",
     `<failing>\n${code}\n</failing>`,
   ].join('\n\n');
 }
@@ -50,7 +98,7 @@ function buildMetaFixPrompt(error, meta, code) {
   return [
     `[validation error] The seed code for ${metaLine} failed: ${error}`,
     'Re-emit the META line VERBATIM, a blank line, then a corrected Strudel program.',
-    'Keep the user\'s original musical intent. Obey all output-format rules for the code body.',
+    "Keep the user's original musical intent. Obey all output-format rules for the code body.",
     `<failing>\n${metaLine}\n\n${code}\n</failing>`,
   ].join('\n\n');
 }
@@ -66,14 +114,43 @@ function buildMetaFixPrompt(error, meta, code) {
  *   validatePattern?: (code: string) => Promise<{ valid: boolean, error?: string }>,
  * }} deps
  */
-export function makeChatSession({ sessionStore, generateStrudel, validatePattern }) {
+export function makeChatSession({
+  sessionStore,
+  generateStrudel,
+  validatePattern,
+  historyTurns = DEFAULT_HISTORY_TURNS,
+  limits = DEFAULT_LIMITS,
+}) {
+  const maxPromptChars = limits?.maxPromptChars ?? DEFAULT_LIMITS.maxPromptChars;
+  const maxCodeBytes = limits?.maxCodeBytes ?? DEFAULT_LIMITS.maxCodeBytes;
+  // Per-session promise queue: load → generate → save never interleaves
+  // for the same sessionId, so two quick PTT presses can't clobber each
+  // other's history.
+  const queue = createKeyedQueue();
+
+  function assertLimits({ prompt, currentCode }) {
+    if (typeof prompt === 'string' && prompt.length > maxPromptChars) {
+      throw new PayloadTooLarge(`\`prompt\` is limited to ${maxPromptChars} characters.`);
+    }
+    if (typeof currentCode === 'string' && Buffer.byteLength(currentCode, 'utf8') > maxCodeBytes) {
+      throw new PayloadTooLarge(`\`currentCode\` is limited to ${maxCodeBytes} bytes.`);
+    }
+  }
+
   // Run the LLM, then loop validate→retry until the pattern is sane or
   // we've burned MAX_VALIDATION_RETRIES extra calls. Last-attempt code is
   // returned regardless so the user always sees something — annotated with
   // `validated: false` plus the error so the client can decide how loud to
   // be about it.
-  async function generateValidated({ prompt, currentCode, history, llmOverrides }) {
-    let result = await generateStrudel({ prompt, currentCode, history, llmOverrides });
+  async function generateValidated({ prompt, currentCode, history, llmOverrides, booth = {}, onProgress }) {
+    const common = { history, llmOverrides, ...booth, onProgress };
+    let attempts = 0;
+    const validate = async (code) => {
+      attempts += 1;
+      onProgress?.({ type: 'validating', attempt: attempts });
+      return validatePattern(code);
+    };
+    let result = await generateStrudel({ prompt, currentCode, ...common });
 
     // META + code: validate the seed code and retry on failure with a
     // META-aware fix prompt. Without this, a `new_track + drums` turn
@@ -83,17 +160,14 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
     // *current* track's editor untouched) but their code body is real
     // and worth validating.
     if (result.meta && result.code && validatePattern) {
-      let validation = await validatePattern(result.code);
-      let attempts = 1;
+      let validation = await validate(result.code);
       while (!validation.valid && attempts <= MAX_VALIDATION_RETRIES) {
         const fixPrompt = buildMetaFixPrompt(validation.error, result.meta, result.code);
         const next = await generateStrudel({
           prompt: fixPrompt,
           currentCode: result.code,
-          history,
-          llmOverrides,
+          ...common,
         });
-        attempts++;
         // Retry returned plain code (no META): the model dropped the
         // host action when fixing. Preserve the original META so the
         // track is still created — only the code body is replaced.
@@ -103,7 +177,13 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
         // bare code, with the host action invisible to the model.
         if (next.code && !next.meta) {
           const reconstructed = `META: ${JSON.stringify(result.meta)}\n\n${next.code}`;
-          result = { ...result, code: next.code, message: reconstructed };
+          result = {
+            ...result,
+            code: next.code,
+            message: reconstructed,
+            explain: next.explain || result.explain,
+            provider: next.provider,
+          };
         } else if (next.meta && next.code) {
           // Got a fresh META + code pair. Adopt wholesale (the model
           // may have decided a slightly different action fits better).
@@ -116,7 +196,7 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
           // there. validated:false is preserved by the loop exit.
           break;
         }
-        validation = await validatePattern(result.code);
+        validation = await validate(result.code);
       }
       return {
         ...result,
@@ -131,20 +211,18 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
     if (result.noChange || !validatePattern) {
       return { ...result, validated: !validatePattern ? undefined : true };
     }
-    let validation = await validatePattern(result.code);
-    let attempts = 1;
+    let validation = await validate(result.code);
     while (!validation.valid && attempts <= MAX_VALIDATION_RETRIES) {
       const fixPrompt = buildFixPrompt(validation.error, result.code);
       const next = await generateStrudel({
         prompt: fixPrompt,
         currentCode: result.code,
-        history,
-        llmOverrides,
+        ...common,
       });
-      attempts++;
       if (next.noChange) break;
-      result = next;
-      validation = await validatePattern(result.code);
+      // A fix retry rarely bothers with a fresh EXPLAIN; keep the first one.
+      result = { ...next, explain: next.explain || result.explain };
+      validation = await validate(result.code);
     }
     return {
       ...result,
@@ -163,90 +241,114 @@ export function makeChatSession({ sessionStore, generateStrudel, validatePattern
 
     async clear(sessionId) {
       assertSessionId(sessionId);
-      await sessionStore.clear(sessionId);
+      await queue.run(sessionId, () => sessionStore.clear(sessionId));
     },
 
     // Stateless one-shot: no session history loaded, no messages stored.
     // Used by the client-side runtime-error recovery loop, where appending
     // synthetic "fix this NaN" turns to the user-visible chat would be noise.
-    async fix({ currentCode, error, llmOverrides }) {
+    async fix({ currentCode, error, llmOverrides, mode, lang, intent, tracks }) {
       if (typeof currentCode !== 'string' || currentCode.trim() === '') {
         throw new InvalidInput('Body must include a non-empty string `currentCode` field.');
       }
       if (typeof error !== 'string' || error.trim() === '') {
         throw new InvalidInput('Body must include a non-empty string `error` field.');
       }
+      assertLimits({ currentCode });
+      const booth = normaliseBoothFields({ mode, lang, intent: intent ?? 'tweak', tracks });
       const fixPrompt = buildFixPrompt(error, currentCode);
       const result = await generateValidated({
         prompt: fixPrompt,
         currentCode,
         history: [],
         llmOverrides,
+        booth,
       });
       return {
         code: result.code,
         message: result.message,
         noChange: !!result.noChange,
         model: result.model,
+        provider: result.provider,
+        explain: result.explain || '',
         validated: result.validated,
         validationError: result.validationError,
         validationAttempts: result.validationAttempts,
       };
     },
 
-    async sendTurn({ sessionId, prompt, currentCode, llmOverrides }) {
+    async sendTurn({ sessionId, prompt, currentCode, llmOverrides, mode, lang, intent, tracks, onProgress }) {
       assertSessionId(sessionId);
       if (typeof prompt !== 'string' || prompt.trim() === '') {
         throw new InvalidInput('Body must include a non-empty string `prompt` field.');
       }
+      assertLimits({ prompt, currentCode });
+      const booth = normaliseBoothFields({ mode, lang, intent, tracks });
 
-      const record = await sessionStore.load(sessionId);
-      const history = toLlmHistory(record.messages);
+      return queue.run(sessionId, async () => {
+        const record = await sessionStore.load(sessionId);
+        const history = windowHistory(toLlmHistory(record.messages), historyTurns);
 
-      const result = await generateValidated({ prompt, currentCode, history, llmOverrides });
+        const result = await generateValidated({
+          prompt,
+          currentCode,
+          history,
+          llmOverrides,
+          booth,
+          onProgress,
+        });
 
-      const ts = new Date().toISOString();
-      record.messages.push({ role: 'user', text: prompt, ts });
-      if (result.meta) {
-        // Persist meta-command turns so the chat shows what was
-        // dispatched and toLlmHistory can replay the META: line.
-        // For new_track + code the seed is also stored so the message
-        // bubble can render the code preview alongside the chip and a
-        // page reload still has the seed available for re-runs.
-        record.messages.push({
-          role: 'assistant',
-          text: result.message,
+        const ts = new Date().toISOString();
+        const extra = {
+          ...(result.explain ? { explain: result.explain } : {}),
+          ...(result.provider ? { provider: result.provider } : {}),
+        };
+        record.messages.push({ role: 'user', text: prompt, ts });
+        if (result.meta) {
+          // Persist meta-command turns so the chat shows what was
+          // dispatched and toLlmHistory can replay the META: line.
+          // For new_track + code the seed is also stored so the message
+          // bubble can render the code preview alongside the chip and a
+          // page reload still has the seed available for re-runs.
+          record.messages.push({
+            role: 'assistant',
+            text: result.message,
+            meta: result.meta,
+            ...(result.code ? { code: result.code } : {}),
+            noChange: true,
+            ...extra,
+            ts,
+          });
+        } else if (result.noChange) {
+          // Cannot-handle path: keep the user-visible message but skip
+          // pushing assistant `code`, so the LLM history transformer
+          // drops it on the next turn.
+          record.messages.push({
+            role: 'assistant',
+            text: result.message,
+            noChange: true,
+            ...extra,
+            ts,
+          });
+        } else {
+          record.messages.push({ role: 'assistant', code: result.code, ...extra, ts });
+        }
+        await sessionStore.save(record);
+
+        return {
+          code: result.code,
+          message: result.message,
           meta: result.meta,
-          ...(result.code ? { code: result.code } : {}),
-          noChange: true,
-          ts,
-        });
-      } else if (result.noChange) {
-        // Cannot-handle path: keep the user-visible message but skip
-        // pushing assistant `code`, so the LLM history transformer
-        // drops it on the next turn.
-        record.messages.push({
-          role: 'assistant',
-          text: result.message,
-          noChange: true,
-          ts,
-        });
-      } else {
-        record.messages.push({ role: 'assistant', code: result.code, ts });
-      }
-      await sessionStore.save(record);
-
-      return {
-        code: result.code,
-        message: result.message,
-        meta: result.meta,
-        noChange: !!result.noChange,
-        model: result.model,
-        messages: record.messages,
-        validated: result.validated,
-        validationError: result.validationError,
-        validationAttempts: result.validationAttempts,
-      };
+          noChange: !!result.noChange,
+          model: result.model,
+          provider: result.provider ?? null,
+          explain: result.explain || '',
+          messages: record.messages,
+          validated: result.validated,
+          validationError: result.validationError,
+          validationAttempts: result.validationAttempts,
+        };
+      });
     },
   };
 }

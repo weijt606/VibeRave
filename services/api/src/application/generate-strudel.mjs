@@ -1,4 +1,5 @@
 import { InvalidInput, ServiceUnavailable, UpstreamError } from '../domain/errors.mjs';
+import { stripExplain } from './explain.mjs';
 
 const FENCE_RE = /^```(?:javascript|js|strudel)?\n([\s\S]*?)\n```$/;
 
@@ -26,14 +27,7 @@ const CANNOT_HANDLE_PLAIN = "Couldn't generate or modify - please try again.";
 // subsequent lines — that lets prompts like "open a new track with
 // some drums" both create the track and seed it with code in one turn.
 const META_FIRST_LINE_RE = /^META:\s*(\{[^\n]*\})\s*(?:\n([\s\S]*))?$/;
-const ALLOWED_META_ACTIONS = new Set([
-  'new_track',
-  'play',
-  'pause',
-  'stop',
-  'stop_all',
-  'schedule_stop',
-]);
+const ALLOWED_META_ACTIONS = new Set(['new_track', 'play', 'pause', 'stop', 'stop_all', 'schedule_stop']);
 // Only `new_track` makes sense as a host action plus a code body — the
 // rest don't touch a track's contents. Any code that follows a non-
 // new_track META line is dropped; the rule asks the model not to emit
@@ -82,16 +76,8 @@ function stripCodeFences(text) {
 function isCannotHandle(text) {
   // Be lenient with smart-vs-straight quotes and em-dashes since the model
   // sometimes "auto-corrects" punctuation.
-  const norm = text
-    .replace(/[‘’]/g, "'")
-    .replace(/[—–]/g, '-')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-  return (
-    norm === CANNOT_HANDLE_PLAIN.toLowerCase() ||
-    norm === CANNOT_HANDLE_PLAIN.toLowerCase().replace(/\.$/, '')
-  );
+  const norm = text.replace(/[‘’]/g, "'").replace(/[—–]/g, '-').replace(/\s+/g, ' ').trim().toLowerCase();
+  return norm === CANNOT_HANDLE_PLAIN.toLowerCase() || norm === CANNOT_HANDLE_PLAIN.toLowerCase().replace(/\.$/, '');
 }
 
 function sanitizeHistory(history) {
@@ -105,6 +91,36 @@ function sanitizeHistory(history) {
   return out;
 }
 
+const MAX_SIBLINGS = 16;
+const MAX_SIBLING_SUMMARY = 200;
+
+/**
+ * Sibling summaries → `<siblings>` block (skills/strudel/rules/siblings.md).
+ * Malformed entries are dropped; the block is omitted when nothing is left.
+ */
+export function buildSiblingsBlock(tracks) {
+  if (!Array.isArray(tracks)) return '';
+  const lines = [];
+  for (const t of tracks.slice(0, MAX_SIBLINGS)) {
+    if (!t || typeof t !== 'object') continue;
+    const name = typeof t.name === 'string' ? t.name.trim().replace(/\s+/g, ' ') : '';
+    const summary = typeof t.summary === 'string' ? t.summary.trim().replace(/\s+/g, ' ') : '';
+    if (!name && !summary) continue;
+    lines.push(`- ${name || 'track'}: ${summary.slice(0, MAX_SIBLING_SUMMARY) || '(no summary)'}`);
+  }
+  return lines.length ? `<siblings>\n${lines.join('\n')}\n</siblings>` : '';
+}
+
+/** User-turn assembly: <current> code, <siblings> block, then the prompt. */
+export function buildUserMessage({ prompt, currentCode, tracks }) {
+  const parts = [];
+  if (currentCode) parts.push(`<current>\n${currentCode}\n</current>`);
+  const siblings = buildSiblingsBlock(tracks);
+  if (siblings) parts.push(siblings);
+  parts.push(prompt);
+  return parts.join('\n\n');
+}
+
 /**
  * @param {{
  *   defaultLlmClient: import('./ports.mjs').LlmClient | null,
@@ -113,11 +129,21 @@ function sanitizeHistory(history) {
  * }} deps
  */
 export function makeGenerateStrudel({ defaultLlmClient, llmClientFor, loadSystemPrompt }) {
-  return async function generateStrudel({ prompt, currentCode, history, llmOverrides }) {
+  return async function generateStrudel({
+    prompt,
+    currentCode,
+    history,
+    llmOverrides,
+    mode,
+    lang,
+    intent,
+    tracks,
+    onProgress,
+  }) {
     const llmClient = llmClientFor ? llmClientFor(llmOverrides) : defaultLlmClient;
     if (!llmClient) {
       throw new ServiceUnavailable(
-        'No LLM client configured. Set LLM_API_KEY in the root .env or open the API Settings panel.',
+        'No LLM client configured. Set LLM_PROVIDERS (or LLM_API_KEY) in the root .env or open the API Settings panel.',
       );
     }
     if (typeof prompt !== 'string' || prompt.trim() === '') {
@@ -125,12 +151,11 @@ export function makeGenerateStrudel({ defaultLlmClient, llmClientFor, loadSystem
     }
 
     const turns = sanitizeHistory(history);
-    const userMessage = currentCode
-      ? `<current>\n${currentCode}\n</current>\n\n${prompt}`
-      : prompt;
+    const userMessage = buildUserMessage({ prompt, currentCode, tracks });
 
-    // Re-read on every request so prompt edits don't require a restart.
-    const systemPrompt = await loadSystemPrompt();
+    // Cached by the provider (re-read when a skill file's mtime changes);
+    // the variant depends on booth mode / intent / explain language.
+    const systemPrompt = await loadSystemPrompt({ mode, intent, lang });
 
     let completion;
     try {
@@ -138,12 +163,21 @@ export function makeGenerateStrudel({ defaultLlmClient, llmClientFor, loadSystem
         systemPrompt,
         userMessage,
         history: turns,
+        onAttempt: (provider) => onProgress?.({ type: 'generating', provider }),
       });
     } catch (err) {
+      // Provider-chain / adapter errors already carry a status + code the
+      // HTTP layer passes through; wrap anything else as a 502.
+      if (typeof err?.status === 'number' && typeof err?.code === 'string') throw err;
       throw new UpstreamError(`LLM error: ${err.message}`);
     }
 
-    const cleaned = stripCodeFences((completion.text ?? '').trim());
+    // EXPLAIN may sit outside or inside a fence; strip on both sides.
+    const first = stripExplain((completion.text ?? '').trim());
+    const second = stripExplain(stripCodeFences(first.text.trim()));
+    const cleaned = second.text.trim();
+    const explain = first.explain || second.explain || '';
+    const provider = completion.provider ?? llmClient.name ?? null;
 
     if (isCannotHandle(cleaned)) {
       return {
@@ -151,6 +185,8 @@ export function makeGenerateStrudel({ defaultLlmClient, llmClientFor, loadSystem
         message: CANNOT_HANDLE_SENTINEL,
         noChange: true,
         model: completion.model,
+        provider,
+        explain,
       };
     }
 
@@ -170,12 +206,16 @@ export function makeGenerateStrudel({ defaultLlmClient, llmClientFor, loadSystem
         message: cleaned,
         noChange: true,
         model: completion.model,
+        provider,
+        explain,
       };
     }
 
     return {
       code: stripStaleVizHint(cleaned),
       model: completion.model,
+      provider,
+      explain,
     };
   };
 }

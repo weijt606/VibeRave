@@ -148,7 +148,8 @@ type StageState = {
   phase: 'day'|'afternoon'|'twilight'|'night'; mode: 'adult'|'kids';
   bpm: number; key: string; style: string;
   status: VibeStatus['phase']; heard: string; target: string; explain: string; lane: 'fast'|'llm';
-  tracks: { id: string; name: string; color: string; playing: boolean; level: number }[];
+  error?: string;       // status === 'error' 时的用户可读中文
+  tracks: { id: string; name: string; color: string; playing: boolean; level: number; caption?: string /* 如 "909 · 四踩" */ }[];
   participants: { name: string; trackId: string; color: string }[];
   ts: number;
 };

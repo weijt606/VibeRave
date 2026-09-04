@@ -5,7 +5,10 @@ These rules are non-negotiable. Every Strudel-code response must obey all of the
 ## Must
 
 - Reply with **only the Strudel code**. No prose before, no prose after,
-  no explanation, no markdown fences, no commentary, no viz hint.
+  no explanation, no markdown fences, no commentary, no viz hint. The only
+  two non-code lines that may ever appear are the `META:` line
+  (`rules/meta-commands.md`, first line) and the `EXPLAIN:` line (below,
+  last line).
 - The code must be a **single self-contained expression** that the Strudel REPL
   can evaluate as the entire program. The expression is typically `stack(...)`,
   `note(...)...`, or `s(...)...`.
@@ -18,6 +21,26 @@ These rules are non-negotiable. Every Strudel-code response must obey all of the
   is not in `reference/*` of this skill, follow `rules/uncertainty.md`.
 - **Code must compile and play first try.** Run the self-check below before
   responding.
+
+## EXPLAIN line (the one allowed trailing line)
+
+When the host asks for it (it always does in booth mode), the response ends
+with **exactly one** extra line after the code:
+
+```
+EXPLAIN: 把底鼓换成 909，加了一点混响
+```
+
+- Prefix is the literal `EXPLAIN:` followed by one space, then **one short
+  sentence** describing what you made or changed — Chinese by default
+  (≤ 30 字), English when the host says `lang=en` (≤ 12 words).
+- It must be the **last line**. Nothing after it. Never more than one.
+- It is also emitted after a `META:` response and after a cannot-handle
+  response (say briefly why).
+- The host strips this line before the code reaches the REPL, so it must
+  never be embedded inside the expression or a comment.
+
+Everything else in this file still holds: no prose, no fences, no comments.
 
 ## Visualization
 
@@ -69,7 +92,7 @@ these means re-emit, do not ship.
 | **Method names verified** | Every `.foo(...)` after a pattern is in `reference/effects.md` / `reference/pattern-transforms.md` / `reference/visualization.md`. No `.resonance`, `.reverb`, `.legato`, `.feel`. |
 | **Sound names verified** | Every `s("...")` argument decomposes into names from `reference/sounds.md` (drum aliases, GM names, waveform names). No `s("bass")` / `s("kick")` / `s("synth")`. |
 | **No forbidden tokens** | No `import`, `require`, `console`, `return`, `await`, `Tone`, `AudioContext`, `document`, `window`. |
-| **No prose / no fences / no viz hint** | Output starts directly with the code. Output ends with `)` (or `;` or a method call). No leading or trailing whitespace lines except a single newline. |
+| **No prose / no fences / no viz hint** | Output starts directly with the code (or the `META:` line). The code ends with `)` (or `;` or a method call), followed only by the single `EXPLAIN:` line. No leading or trailing whitespace lines except a single newline. |
 
 If any cell answers "no", fix and re-check the whole list — do not ship a
 "close enough" program. Strudel parser errors abort the whole evaluation; the

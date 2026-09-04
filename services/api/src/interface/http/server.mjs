@@ -5,14 +5,24 @@ import { registerHealth } from './routes/health.mjs';
 import { registerGenerate } from './routes/generate.mjs';
 import { registerTranscribe } from './routes/transcribe.mjs';
 import { registerSessions } from './routes/sessions.mjs';
+import { registerPregen } from './routes/pregen.mjs';
+import { registerGuards } from './guards.mjs';
 
 export async function createServer({ deps, config }) {
   const fastify = Fastify({
-    logger: true,
+    logger: config.server.logger ?? true,
     bodyLimit: config.server.maxBodyBytes,
   });
 
   await fastify.register(cors, { origin: true });
+
+  // Booth token + per-IP rate limit on /generate* and /transcribe
+  // (CONTRACTS.md §8.3). Both are no-ops when unset / 0.
+  registerGuards(fastify, {
+    token: config.booth?.token || null,
+    rateLimitPerMin: config.booth?.rateLimitPerMin ?? 20,
+    limiter: deps.rateLimiter,
+  });
 
   fastify.addContentTypeParser(
     ['audio/wav', 'audio/x-wav', 'application/octet-stream'],
@@ -22,6 +32,7 @@ export async function createServer({ deps, config }) {
 
   fastify.setErrorHandler((err, request, reply) => {
     if (err instanceof DomainError) {
+      if (err.retryAfterMs) reply.header('retry-after', String(Math.max(1, Math.ceil(err.retryAfterMs / 1000))));
       return reply.code(err.status).send({ error: err.message, code: err.code });
     }
     // Upstream provider errors thrown by the LLM/STT adapters carry an
@@ -41,6 +52,7 @@ export async function createServer({ deps, config }) {
   registerGenerate(fastify, deps);
   registerSessions(fastify, deps);
   registerTranscribe(fastify, deps);
+  registerPregen(fastify, deps);
 
   return fastify;
 }

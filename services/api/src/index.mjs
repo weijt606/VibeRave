@@ -1,9 +1,10 @@
-import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadConfig } from './config.mjs';
-import { createOpenAICompatibleClient } from './infrastructure/openai-compatible-client.mjs';
+import { composeLlm } from './llm-composition.mjs';
+import { createSkillPromptProvider } from './infrastructure/skill-prompt.mjs';
+import { createPregenStore } from './infrastructure/pregen-store.mjs';
 import { createOpenAICompatibleStt } from './infrastructure/openai-compatible-stt.mjs';
 import { createDashScopeStt } from './infrastructure/dashscope-stt.mjs';
 import { createWhisperTranscriber } from './infrastructure/whisper-transcriber.mjs';
@@ -24,63 +25,25 @@ import { createServer } from './interface/http/server.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const config = loadConfig();
 
-// Composable Strudel skill: rules + reference + recipes + examples loaded in
-// the order declared in skills/strudel/SKILL.md. Re-read on every request
-// (handled by generateStrudel) so editing the skill doesn't require a restart.
+// Composable Strudel skill: rules + reference + recipes + examples in the
+// order declared in skills/strudel/SKILL.md (SKILL_ORDER / TWEAK_ORDER in
+// infrastructure/skill-prompt.mjs). Cached in memory; re-read only when a
+// skill file's mtime changes, so editing the skill still needs no restart.
 const SKILL_ROOT = resolve(__dirname, 'skills/strudel');
-const SKILL_ORDER = [
-  'rules/output-format.md',
-  'rules/iteration.md',
-  'rules/host-controls.md',
-  'rules/diversity.md',
-  'rules/lushness.md',
-  'rules/sound-design.md',
-  'rules/style-fidelity.md',
-  'rules/variation.md',
-  'rules/complexity.md',
-  'rules/family-mode.md',
-  'rules/uncertainty.md',
-  'rules/cannot-handle.md',
-  'rules/meta-commands.md',
-  'rules/error-recovery.md',
-  'reference/sounds.md',
-  'reference/mini-notation.md',
-  'reference/pattern-transforms.md',
-  'reference/effects.md',
-  'reference/modulation.md',
-  'reference/tempo.md',
-  'reference/tonal.md',
-  'reference/visualization.md',
-  'reference/dual-deck.md',
-  'recipes/generate.md',
-  'recipes/explain.md',
-  'recipes/debug.md',
-  'recipes/vary.md',
-  'examples/genres.md',
-  'examples/techniques.md',
-  'examples/complex.md',
-  'examples/kids.md',
-];
-const loadSystemPrompt = async () => {
-  const parts = await Promise.all(SKILL_ORDER.map((rel) => readFile(resolve(SKILL_ROOT, rel), 'utf8')));
-  return parts.join('\n\n---\n\n');
-};
+const skillPrompt = createSkillPromptProvider({ root: SKILL_ROOT });
+const loadSystemPrompt = (opts) => skillPrompt.load(opts);
 
 // Fail-fast: read every skill file at boot so a missing/renamed entry surfaces
 // during startup instead of on the first /generate request.
 await loadSystemPrompt();
 
-// LLM_PROVIDER picks the default backend the composition root wires.
-// Per-request overrides (sent from the frontend Settings UI as headers)
-// build a one-off client; this is just the fallback used when the user
-// hasn't configured anything yet.
-function buildLlmClient(llmCfg) {
-  const cfg = llmCfg.provider === 'ollama' ? llmCfg.ollama : llmCfg.api;
-  return createOpenAICompatibleClient(cfg);
-}
-const defaultLlmClient = buildLlmClient(config.llm);
+// LLM provider chain (CONTRACTS.md §8.1): LLM_PROVIDERS order = priority,
+// automatic failover, per-provider circuit breaker. Per-request x-llm-*
+// overrides from the Settings UI are prepended to the chain.
+const { chain: llmChain, defaultLlmClient, llmClientFor } = composeLlm(config);
 console.log(
-  `[llm] provider=${config.llm.provider} ${defaultLlmClient ? `model=${(config.llm.provider === 'ollama' ? config.llm.ollama : config.llm.api).model}` : '(no key configured — provide one via Settings)'}`,
+  `[llm] chain=${llmChain.names.join(' → ') || '(none)'} timeout=${config.llm.timeoutMs}ms max_tokens=${config.llm.maxTokens} history=${config.llm.historyTurns} turns` +
+    (defaultLlmClient ? '' : ' (no provider configured — provide one via .env or Settings)'),
 );
 
 // STT_PROVIDER picks which transcriber to wire. All conform to the same
@@ -144,36 +107,10 @@ const transcriptNormalizer = config.transcript.llmCorrect
 console.log(`[transcript-normalizer] ${transcriptNormalizer ? 'enabled' : 'disabled'}`);
 
 // ─────────────────────────────────────────────────────────────────────
-// Per-request override factories. The HTTP layer reads the user's API
-// settings from request headers and asks for a one-off client when the
-// frontend Settings UI is configured. Light cache keyed on a config hash
-// keeps the SDK from being re-instantiated on every request.
-
-const llmClientCache = new Map(); // key → LlmClient
-function llmClientFor(overrides) {
-  if (!overrides) return defaultLlmClient;
-  const cfg = {
-    provider: overrides.provider || config.llm.provider,
-    apiKey: overrides.apiKey ?? null,
-    baseURL: overrides.baseURL || null,
-    model: overrides.model || null,
-    temperature: typeof overrides.temperature === 'number' ? overrides.temperature : undefined,
-  };
-  if (!cfg.apiKey || !cfg.model) return defaultLlmClient;
-  const key = `${cfg.provider}|${cfg.baseURL || ''}|${cfg.model}|${cfg.apiKey.slice(-6)}`;
-  let c = llmClientCache.get(key);
-  if (!c) {
-    c = createOpenAICompatibleClient({
-      apiKey: cfg.apiKey,
-      baseURL: cfg.baseURL || (cfg.provider === 'ollama' ? config.llm.ollama.baseURL : config.llm.api.baseURL),
-      model: cfg.model,
-      temperature: cfg.temperature ?? config.llm.api.temperature,
-    });
-    if (!c) return defaultLlmClient;
-    llmClientCache.set(key, c);
-  }
-  return c;
-}
+// Per-request STT override factory. The HTTP layer reads the user's API
+// settings from request headers and asks for a one-off transcriber when
+// the frontend Settings UI is configured. Light cache keyed on a config
+// hash keeps the SDK from being re-instantiated on every request.
 
 const transcriberCache = new Map(); // key → Transcriber
 function transcriberFor(overrides) {
@@ -227,7 +164,19 @@ const transcribeAudio = makeTranscribeAudio({
   transcriptNormalizer,
 });
 const validatePattern = makeValidateStrudel();
-const chatSession = makeChatSession({ sessionStore, generateStrudel, validatePattern });
+const chatSession = makeChatSession({
+  sessionStore,
+  generateStrudel,
+  validatePattern,
+  historyTurns: config.llm.historyTurns,
+  limits: { maxPromptChars: config.booth.maxPromptChars, maxCodeBytes: config.booth.maxCodeBytes },
+});
+const pregenStore = createPregenStore({
+  dir: config.booth.pregenDir || resolve(__dirname, '..', 'data', 'pregen'),
+});
+console.log(
+  `[booth] token=${config.booth.token ? 'required' : 'off'} rate-limit=${config.booth.rateLimitPerMin}/min pregen=${pregenStore.dir}`,
+);
 
 const server = await createServer({
   config,
@@ -242,6 +191,7 @@ const server = await createServer({
     chatSession,
     llmClientFor,
     transcriberFor,
+    pregenStore,
   },
 });
 

@@ -8,15 +8,37 @@
 // supplied by `@strudel/core/repl`, which we don't run here. We stub them
 // as no-ops so a track that opens with `setcps(120/60/4)` still validates.
 
-const STRING_LIKE_CONTROLS = new Set([
-  'note',
-  'n',
-  's',
-  'sound',
-  'bank',
-  'scale',
-  'vowel',
-]);
+import { stripExplainLine } from './explain.mjs';
+
+// Static denylist run BEFORE evaluate(). The transpiler sandbox already
+// rejects `import`, but evaluate() runs in-process, so anything that could
+// reach Node globals is refused up front. String literals are blanked
+// first so a sound name or lyric can't trip it. The rejection is a normal
+// validation error, so chat-session's retry loop asks the model to fix it.
+const DENIED_TOKENS = [
+  'import',
+  'require',
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'document',
+  'window',
+  'process',
+  'globalThis',
+  'eval',
+  'Function',
+];
+const DENY_RE = new RegExp(`(?<![\\w$.])(?:${DENIED_TOKENS.join('|')})(?![\\w$])`);
+const STRING_LITERAL_RE = /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/g;
+
+/** @returns {string | null} the first forbidden identifier, or null */
+export function findDeniedToken(code) {
+  const blanked = String(code ?? '').replace(STRING_LITERAL_RE, '""');
+  const m = blanked.match(DENY_RE);
+  return m ? m[0] : null;
+}
+
+const STRING_LIKE_CONTROLS = new Set(['note', 'n', 's', 'sound', 'bank', 'scale', 'vowel']);
 
 // queryArc length used for validation. Long enough to expand `<a b c d>` and
 // `slow(2)` patterns into their full cycle, short enough that hot prompts
@@ -64,9 +86,19 @@ async function init() {
 }
 
 export function makeValidateStrudel() {
-  return async function validatePattern(code) {
+  return async function validatePattern(input) {
+    // The EXPLAIN line is stripped upstream, but be defensive: it must
+    // never reach the transpiler.
+    const code = typeof input === 'string' ? stripExplainLine(input) : input;
     if (typeof code !== 'string' || code.trim() === '') {
       return { valid: false, error: 'empty code' };
+    }
+    const denied = findDeniedToken(code);
+    if (denied) {
+      return {
+        valid: false,
+        error: `forbidden token "${denied}": Strudel code must not use ${denied} (no imports, network, DOM, or Node globals)`,
+      };
     }
     let evaluate, transpiler;
     try {

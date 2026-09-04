@@ -5,16 +5,19 @@ export function registerHealth(
   { defaultLlmClient, defaultTranscriber, llmClientFor, transcriberFor, config },
 ) {
   fastify.get('/health', async () => {
-    const provider = config.llm.provider;
-    const cfg = provider === 'ollama' ? config.llm.ollama : config.llm.api;
+    // First configured (non-skipped) provider is the one most likely to
+    // answer; the full chain is at /health/providers.
+    const chain = config.llm.providers || [];
+    const primary = chain.find((p) => !p.skipReason) || chain[0] || null;
     return {
       ok: true,
       service: 'viberave-api',
       llm: {
         ready: Boolean(defaultLlmClient),
-        provider,
-        baseURL: cfg.baseURL,
-        model: cfg.model,
+        provider: primary ? primary.name : config.llm.provider,
+        baseURL: primary ? primary.baseURL : null,
+        model: primary ? primary.model : null,
+        providers: chain.map((p) => p.name),
       },
       stt: {
         ready: Boolean(defaultTranscriber),
@@ -22,6 +25,25 @@ export function registerHealth(
         model: defaultTranscriber ? defaultTranscriber.getModelId() : null,
       },
     };
+  });
+
+  // Provider chain health (CONTRACTS.md §8.1). With x-llm-* override
+  // headers the override provider shows up first, exactly as it would be
+  // tried by /generate.
+  fastify.get('/health/providers', async (request) => {
+    const llmOverrides = readLlmOverrides(request.headers);
+    const client = llmClientFor ? llmClientFor(llmOverrides) : defaultLlmClient;
+    if (client && typeof client.health === 'function') return client.health();
+    if (!client) return [];
+    return [
+      {
+        name: client.name || 'default',
+        model: client.model || null,
+        healthy: true,
+        lastError: null,
+        lastLatencyMs: null,
+      },
+    ];
   });
 
   // Test buttons in the API Settings panel hit these to verify the
@@ -37,8 +59,7 @@ export function registerHealth(
     if (!client) {
       return reply.code(503).send({
         ok: false,
-        error:
-          'LLM not configured — paste an API key into the API Settings panel or set LLM_API_KEY in .env.',
+        error: 'LLM not configured — paste an API key into the API Settings panel or set LLM_API_KEY in .env.',
       });
     }
     const t0 = Date.now();
@@ -55,8 +76,7 @@ export function registerHealth(
         sample: (result.text || '').slice(0, 64),
       };
     } catch (err) {
-      const status =
-        typeof err?.status === 'number' && err.status >= 400 ? err.status : 502;
+      const status = typeof err?.status === 'number' && err.status >= 400 ? err.status : 502;
       return reply.code(status).send({
         ok: false,
         ms: Date.now() - t0,
@@ -91,8 +111,7 @@ export function registerHealth(
         sample: (result.text || '').slice(0, 64),
       };
     } catch (err) {
-      const status =
-        typeof err?.status === 'number' && err.status >= 400 ? err.status : 502;
+      const status = typeof err?.status === 'number' && err.status >= 400 ? err.status : 502;
       return reply.code(status).send({
         ok: false,
         ms: Date.now() - t0,
