@@ -156,20 +156,17 @@ const themeOptions = Object.fromEntries(Object.keys(themes).map((k) => [k, k]));
 const fontFamilyOptions = {
   monospace: 'monospace',
   Courier: 'Courier',
-  CutiePi: 'CutiePi',
   JetBrains: 'JetBrains',
   Hack: 'Hack',
   FiraCode: 'FiraCode',
   'FiraCode-SemiBold': 'FiraCode SemiBold',
   teletext: 'teletext',
   tic80: 'tic80',
-  mode7: 'mode7',
   BigBlueTerminal: 'BigBlueTerminal',
   x3270: 'x3270',
   Monocraft: 'Monocraft',
   PressStart: 'PressStart2P',
   'we-come-in-peace': 'we-come-in-peace',
-  galactico: 'galactico',
 };
 
 function MainSettingsContent({ started }) {
